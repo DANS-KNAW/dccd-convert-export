@@ -1,0 +1,14 @@
+[Unit]
+Description=Dccd Convert Export Service
+
+[Service]
+ExecStart=/bin/java \
+   -Dlogback.configurationFile=/etc/opt/dans.knaw.nl/dccd-convert-export/logback-service.xml \
+   -Dapp.home=/opt/dans.knaw.nl/dccd-convert-export \
+   -jar /opt/dans.knaw.nl/dccd-convert-export/bin/dccd-convert-export.jar run-service
+
+User=dccd-convert-export
+Group=dccd-convert-export
+
+[Install]
+WantedBy=multi-user.target
