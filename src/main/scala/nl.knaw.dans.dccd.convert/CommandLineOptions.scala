@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.dccd.convert
 
-import org.rogach.scallop.{ScallopConf, ScallopOption, Subcommand, singleArgConverter}
+import org.rogach.scallop.{ ScallopConf, Subcommand }
 
 class CommandLineOptions(args: Array[String], configuration: Configuration) extends ScallopConf(args) {
   appendDefaultToDescription = true
@@ -25,8 +25,8 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Convert DCCD export to multi-deposit"""
   val synopsis: String =
     s"""
-       |  $printedName (synopsis of command line parameters)
-       |  $printedName (... possibly multiple lines for subcommands)""".stripMargin
+       |  $printedName  dccd
+       |  $printedName  """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
   banner(
@@ -41,12 +41,14 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
        |""".stripMargin)
   //val url = opt[String]("someOption", noshort = true, descr = "Description of the option", default = app.someProperty)
 
-  val runService = new Subcommand("run-service") {
+  val runService = new Subcommand("dccd") {
     descr(
-      "Starts Dccd Convert Export as a daemon that services HTTP requests")
+      "Converts Dccd xml files to csv files")
+    //"Starts Dccd Convert Export as a daemon that services HTTP requests")
     footer(SUBCOMMAND_SEPARATOR)
   }
   addSubcommand(runService)
+
 
   footer("")
 }

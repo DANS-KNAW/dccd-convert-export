@@ -1,0 +1,33 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Building DCCD Convert Export 1.0.0-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- exec-maven-plugin:1.4.0:java (default-cli) @ dccd-convert-export ---
+./data/dccd_93_dataset/dccd_93/administrative/project_metadata.xml
+'s-Hertogenbosch
+Stichting RING
+Stichting RING
+Thu Feb 10 00:00:00 CET 2011
+Thu Feb 10 00:00:00 CET 2011
+Stichting RING
+Onbekend
+Gebouw
+datering
+gebouwd erfgoed
+Quercus
+DATASET,DC_TITLE,DEPOSITOR_ID,DCX_CREATOR_ORGANIZATION,DDM_CREATED,DCT_RIGHTSHOLDER,DC_DESCRIPTION,DC_SUBJECT,DCT_TEMPORAL,DCT_SPATIAL,DCX_SPATIAL_SCHEME,DCX_SPATIAL_X,DCX_SPATIAL_Y,DC_IDENTIFIER,DCX_RELATION_QUALIFIER,DCX_RELATION_TITLE,DCX_RELATION_LINK,DC_TYPE,DC_LANGUAGE,DDM_ACCESSRIGHTS,DDM_AVAILABLE,DDM_AUDIENCE
+"./data/dccd_93_dataset/dccd_93/administrative/project_metadata.xml",'s-Hertogenbosch,Stichting RING,Stichting RING,Thu Feb 10 00:00:00 CET 2011,Stichting RING,Dendrochronological project,Dendrochronology,,,,,,,,,,,,,,
+"./data/dccd_93_dataset/dccd_93/administrative/project_metadata.xml",,,,,,,Onbekend,,,,,,,,,,,,,,
+"./data/dccd_93_dataset/dccd_93/administrative/project_metadata.xml",,,,,,,Gebouw,,,,,,,,,,,,,,
+"./data/dccd_93_dataset/dccd_93/administrative/project_metadata.xml",,,,,,,datering,,,,,,,,,,,,,,
+"./data/dccd_93_dataset/dccd_93/administrative/project_metadata.xml",,,,,,,gebouwd erfgoed,,,,,,,,,,,,,,
+"./data/dccd_93_dataset/dccd_93/administrative/project_metadata.xml",,,,,,,Quercus,,,,,,,,,,,,,,
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 2.718 s
+[INFO] Finished at: 2017-11-09T15:52:30+01:00
+[INFO] Final Memory: 25M/315M
+[INFO] ------------------------------------------------------------------------

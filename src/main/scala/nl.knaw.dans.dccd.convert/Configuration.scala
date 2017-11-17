@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.dccd.convert
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.{ Files, Paths }
 
 import org.apache.commons.configuration.PropertiesConfiguration
 import resource.managed
@@ -29,7 +29,9 @@ object Configuration {
   def apply(): Configuration = {
     val home = Paths.get(System.getProperty("app.home"))
     val cfgPath = Seq(
-      Paths.get(s"/etc/opt/dans.knaw.nl/dccd-nl.knaw.dans.dccd.nl.knaw.dans.dccd.convert-export/"),
+      //Paths.get(s"/etc/opt/dans.knaw.nl/dccd-convert-export/"),
+      //Paths.get(s"/etc/opt/nl.knaw.dans/dccd-convert-export/"),
+      Paths.get(s"/etc/opt/dans.knaw.nl/dccd-convert-export/"),
       home.resolve("cfg"))
       .find(Files.exists(_))
       .getOrElse { throw new IllegalStateException("No configuration directory found") }

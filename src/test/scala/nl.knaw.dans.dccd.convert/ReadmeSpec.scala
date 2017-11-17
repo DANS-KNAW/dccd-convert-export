@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.dccd.convert
 
-import java.io.{ByteArrayOutputStream, File}
+import java.io.{ ByteArrayOutputStream, File }
 
 import org.scalatest._
 

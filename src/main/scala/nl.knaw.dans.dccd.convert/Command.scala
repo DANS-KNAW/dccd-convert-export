@@ -19,7 +19,7 @@ import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.reflectiveCalls
-import scala.util.{ Failure, Try }
+import scala.util.{ Failure, Success, Try }
 
 object Command extends App with DebugEnhancedLogging {
   type FeedBackMessage = String
@@ -28,13 +28,26 @@ object Command extends App with DebugEnhancedLogging {
   val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration) {
     verify()
   }
-  val app = new DccdConvertExportApp(new ApplicationWiring(configuration))
+  //val app = new DccdConvertExportApp(new ApplicationWiring(configuration))
+  val app = new DccdConvertExportApp(configuration)
 
 
   val result: Try[FeedBackMessage] = commandLine.subcommand match {
+    //case _ =>
+    case Some(runService @ commandLine.runService) =>
+      app.createFullReport()
+      Try {"full report"} match {
+        case Failure(_) => Try{"failure: Full report dccd-convert"}
+        case Success(_) => Try{"success: Full report dccd-convert"}
+      }
     case _ =>
+      Try {""} match {
+        case Failure(_) => Try{"failure: ?"}
+        case Success(_) => Try{"unknown command"}
+      }
 
-      ???
+
+      //???
   }
 
   result.map(msg => Console.err.println(s"OK: $msg")).doIfFailure {
