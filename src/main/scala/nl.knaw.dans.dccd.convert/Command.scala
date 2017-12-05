@@ -33,7 +33,7 @@ object Command extends App with DebugEnhancedLogging {
 
 
   val result: Try[FeedBackMessage] = commandLine.subcommand match {
-    //case _ =>
+
     case Some(runService @ commandLine.runService) =>
       app.createFullReport()
       Try {"full report"} match {
