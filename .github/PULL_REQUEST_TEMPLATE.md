@@ -5,7 +5,7 @@ Fixes EASY-
 * 
 * 
 
-#### Where should the reviewer @DANS-KNAW/easy start?
+#### Where should the reviewer @DANS-KNAW/dccd start?
 
 #### How should this be manually tested?
 
