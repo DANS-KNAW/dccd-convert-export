@@ -18,17 +18,17 @@ package nl.knaw.dans.dccd.convert
 import java.io.{ File, FileWriter }
 import java.nio.file.{ Path, Paths }
 import java.text.SimpleDateFormat
-import java.util.{ Calendar, Date, GregorianCalendar, Locale }
+import java.util.{ Calendar, GregorianCalendar, Locale }
 
 import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, ExtendedBufferedReader }
 
+import scala.collection.mutable._
 import scala.io.Source.fromString
 import scala.util.Try
 import scala.xml.parsing.ConstructingParser.fromSource
 import scala.xml.{ Elem, NodeSeq, TopScope, XML }
 
 
-//class DccdConvertExportApp(wiring: ApplicationWiring)  {
 class DccdConvertExportApp(configuration: Configuration) {
 
   def getListOfSubDirectories(directoryName: String): Array[String] = {
@@ -52,14 +52,10 @@ class DccdConvertExportApp(configuration: Configuration) {
     Paths.get(configuration.properties.getString(dir))
   }
 
-  /* Previous Columns
-  val csvFormat: CSVFormat = CSVFormat.RFC4180.withHeader("DATASET", "DC_TITLE", "DEPOSITOR_ID", "DCX_CREATOR_ORGANIZATION", "DDM_CREATED", "DCT_RIGHTSHOLDER", "DC_DESCRIPTION", "DC_SUBJECT", "DCT_TEMPORAL",  "DCX_SPATIAL_SCHEME", "DCX_SPATIAL_X", "DCX_SPATIAL_Y", "DC_IDENTIFIER", "DCX_RELATION_QUALIFIER", "DCX_RELATION_TITLE", "DCX_RELATION_LINK", "DC_TYPE", "DC_LANGUAGE", "DDM_ACCESSRIGHTS", "DDM_AVAILABLE", "DDM_AUDIENCE").withDelimiter(',')
-  */
 
   val csvFormat: CSVFormat = CSVFormat.RFC4180.withHeader(
     "DATASET",
     "DC_TITLE",
-    //"DEPOSITOR_ID",
     "DCT_ALTERNATIVE",
     "DCX_CREATOR_TITLES",
     "DCX_CREATOR_INITIALS",
@@ -127,252 +123,392 @@ class DccdConvertExportApp(configuration: Configuration) {
 
   private def parseNoWS(s: String) = fromSource(fromString(s), preserveWS = false).element(TopScope)
 
-  //Build reader instance
-  //Read data.csv
-  //Default seperator is comma
-  //Default quote character is double quote
-  //Start reading from line number 2 (line numbers start from zero)
-  // val reader: CSVReader = new CSVReader(new FileReader("./data/UserIdEasyMap.csv"), ',' , '"' , 1)
-  //var nextLine = null
-  //while ( { (nextLine = reader.readNext) != null }) if (nextLine != null) { //Verifying the read data here
-  //  System.out.println(util.Arrays.toString(nextLine))
-  //}
-  //println(reader.)
-
-
-
   val Format = new SimpleDateFormat("yyyy-MM-dd")
   var range: String = ""
   val valA: String = " AD"
   val valB: String = " BC"
 
+  def directoryPath(dir: String): Path = {
+    getPath(dir)
+  }
 
+  def directoryList(dir: String): List[String] = {
+    getListOfSubDirectories(getPath(dir).toString).toList
+  }
 
-  def createInfoPerProject(projectName:String, dir:String): Unit = {
-    var dirPath: Path = getPath(dir)
-    var dirList: List[String] = getListOfSubDirectories(getPath(dir).toString).toList
-    var dirrMetadata: String = dirPath.toString + "/" + projectName + "/administrative/project_metadata.xml"
-    var dirrUser: String = dirPath.toString + "/" + projectName + "/administrative/user.xml"
-    var metadata: Elem = XML.loadFile(dirrMetadata.toString)
-    var parsedMetadata: NodeSeq = parseNoWS(metadata.toString())
-    var user: Elem = XML.loadFile(dirrUser.toString)
-    var parsedUser: NodeSeq = parseNoWS(user.toString())
+  def directoryOfData(projectName: String, path: Path, relativePathOfData: String): String = {
+    path.toString + "/" + projectName + relativePathOfData
+  }
 
-    var dataset: String = projectName.trim
-    //var dataset: String = (parsedMetadata \\ "sid").text.stripPrefix("dccd:")
+  def getMetadataAsXmlTreeElem(projectName: String, dir: String): Elem = {
+    XML.loadFile(directoryOfData(projectName, directoryPath(dir), "/administrative/project_metadata.xml").toString)
+  }
 
-    var dcTitle: String = (parsedMetadata \\ "title").text.trim
-    var depositorId: String = (parsedUser \\ "id").text.trim
-    var dcxCreatorOrganization: String = (parsedMetadata \\ "ownerOrganizationId").text.trim
+  def getUserAsXmlTreeElem(projectName: String, dir: String): Elem = {
+    XML.loadFile(directoryOfData(projectName, directoryPath(dir), "/administrative/user.xml").toString)
+  }
 
-    var date: String = (parsedMetadata \\ "stateChanged").text.trim
+  def getParsedMetadata(projectName: String, dir: String): NodeSeq = {
+    parseNoWS(getMetadataAsXmlTreeElem(projectName, dir).toString())
+  }
+
+  def getParsedUser(projectName: String, dir: String): NodeSeq = {
+    parseNoWS(getUserAsXmlTreeElem(projectName, dir).toString())
+  }
+
+  def extractDataset(projectName: String): String = {
+    projectName
+  }
+
+  def extractDcTitle(projectName: String, dir: String): String = {
+    (getParsedMetadata(projectName, dir) \\ "title").text.trim
+  }
+
+  def extractDepositorId(projectName: String, dir: String): String = {
+    (getParsedUser(projectName, dir) \\ "title").text.trim
+  }
+
+  def extractDcxCreatorOrganization(projectName: String, dir: String): String = {
+    (getParsedMetadata(projectName, dir) \\ "ownerOrganizationId").text.trim
+  }
+
+  def extractDdmCreated(projectName: String, dir: String): String = {
+    var date: String = (getParsedMetadata(projectName, dir) \\ "stateChanged").text.trim
     var parsedDate: AnyRef = Format.parseObject(date)
-    var ddmCreated: String = Format.format(parsedDate)
+    Format.format(parsedDate)
+  }
 
-    var dctRightsHolder: String = dcxCreatorOrganization
-    var dcDescription: String = "Dendrochronological project".trim
+  def extractDctRightsHolder(projectName: String, dir: String): String = {
+    extractDcxCreatorOrganization(projectName, dir)
+  }
 
-    var dcSubject: String = "Dendrochronology".trim
+  def setDcDescription(): String = {
+    "Dendrochronological project".trim
+  }
 
+  def setDcSubject(): String = {
+    "Dendrochronology".trim
+  }
 
-    /* WE CAN USE STH LIKE THIS IF THERE ARE SEVERAL SUB-ELEMENTS OF AN ELEMENT IN THE XML FILE, FOR THE RELEVANT COLUMNS */
-    /*for (e <- metadata.child) {
-        if (e.label == "elementTypes"){
-           for(ee <- e.child){
-               println((ee \\ "elementType").text)
-           }
+  def extractListOfDcElementTypes(projectName: String, dir: String): List[String] = {
+    var ListOfElementTypes: List[String] = List()
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    for (e <- metadataXmlElem.child) {
+      if (e.label == "elementTypes") {
+        for (ee <- e.child) {
+          if ((ee \\ "elementType").text.nonEmpty) {
+            ListOfElementTypes = ListOfElementTypes ::: List("dccd_element_type: " + (ee \\ "elementType").text)
+          }
         }
-    }*/
-
-
-    var dcElementType: String = ""
-    if ((parsedMetadata \\ "elementType").text.nonEmpty) {
-       dcElementType = "dccd_element_type: " + (parsedMetadata \\ "elementType").text.trim
-    }
-
-    var dcObjectType: String = ""
-    if((parsedMetadata \\ "objectType").text.nonEmpty){
-      dcObjectType = "dccd_object_type: " + (parsedMetadata \\ "objectType").text.trim
-    }
-
-    var dcTypeMetadata : String = ""
-    if((parsedMetadata \\ "type").text.nonEmpty){
-      dcTypeMetadata = "dccd_type: " + (parsedMetadata \\ "type").text.trim
-    }
-
-    var dcCategory : String = ""
-    if((parsedMetadata \\ "category").text.nonEmpty){
-      dcCategory = "dccd_category: " + (parsedMetadata \\ "category").text.trim
-    }
-
-    var dcTaxon : String = ""
-    if((parsedMetadata \\ "taxon").text.nonEmpty){
-      dcTaxon = "dccd_taxon: " + (parsedMetadata \\ "taxon").text.trim
-    }
-
-
-    def timeRange(parsedData: NodeSeq): String = {
-      val parsedData = parsedMetadata
-      val first = (parsedData \\ "firstYear").text.trim
-      val last = (parsedData \\ "lastYear").text.trim
-      if (first.contains("-").equals(false) && last.contains("-").equals(false)) {
-        if (first.nonEmpty && last.nonEmpty)
-          range = first + "-" + last + valA
-        if (first.nonEmpty && last.isEmpty) //???????????
-          range = first + "-" + "" //first + valA ?????
-        if (first.isEmpty && last.nonEmpty) //????????????
-          range = "" + "-" + last // + valA ??????????
       }
-      if (first.contains("-") && last.contains("-")) {
-        if (first.nonEmpty && last.nonEmpty)
-          range = ((first.toInt - 1) * (-1)).toString + "-" + ((last.toInt - 1) * (-1)).toString + valB
-        if (first.nonEmpty && last.isEmpty) //??????????????????????????????????????
-          range = ((first.toInt - 1) * (-1)).toString + valB + "-" + ""
-        if (first.isEmpty && last.nonEmpty) //??????????????????????????????????????
-          range = "" + "-" + ((last.toInt - 1) * (-1)).toString + valB
-      }
-      if (first.contains("-") && last.contains("-").equals(false)) {
-        if (first.nonEmpty && last.nonEmpty)
-          range = ((first.toInt - 1) * (-1)).toString + valB + "-" + last + valA
-        if (first.nonEmpty && last.isEmpty) //??????????????????????????????????????
-          range = ((first.toInt - 1) * (-1)).toString + valB + "-" + ""
-        if (first.isEmpty && last.nonEmpty) //??????????????????????????????????????
-          range = "" + "-" + last + valA
+    }
+    ListOfElementTypes
+  }
 
+  def extractListOfDcObjectTypes(projectName: String, dir: String): List[String] = {
+    var ListOfObjectTypes: List[String] = List()
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    for (e <- metadataXmlElem.child) {
+      if (e.label == "objectTypes") {
+        for (ee <- e.child) {
+          if ((ee \\ "objectType").text.nonEmpty) {
+            ListOfObjectTypes = ListOfObjectTypes ::: List("dccd_object_type: " + (ee \\ "objectType").text)
+          }
+        }
       }
-      range
+    }
+    ListOfObjectTypes
+  }
+
+
+  def extractListOfDcTypesMetadata(projectName: String, dir: String): List[String] = {
+    var ListOfDcTypes: List[String] = List()
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    for (e <- metadataXmlElem.child) {
+      if (e.label == "types") {
+        for (ee <- e.child) {
+          if ((ee \\ "type").text.nonEmpty) {
+            ListOfDcTypes = ListOfDcTypes ::: List("dccd_type: " + (ee \\ "type").text)
+          }
+        }
+      }
+    }
+    ListOfDcTypes
+  }
+
+  def extractDcCategory(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "category").text.nonEmpty) {
+      "dccd_category: " + (getParsedMetadata(projectName, dir) \\ "category").text.trim
+    }
+    else ""
+  }
+
+  def extractListOfDcTaxons(projectName: String, dir: String): List[String] = {
+    var ListOfDcTaxons: List[String] = List()
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    for (e <- metadataXmlElem.child) {
+      if (e.label == "taxons") {
+        for (ee <- e.child) {
+          if ((ee \\ "taxon").text.nonEmpty) {
+            ListOfDcTaxons = ListOfDcTaxons ::: List("dccd_taxon: " + (ee \\ "taxon").text)
+          }
+        }
+      }
+    }
+    ListOfDcTaxons
+  }
+
+  //TODO rearrange the locations of ".isEmpty" conditions
+  def extractTimeRange(projectName: String, dir: String): String = {
+    val first = (getParsedMetadata(projectName, dir) \\ "firstYear").text.trim
+    val last = (getParsedMetadata(projectName, dir) \\ "lastYear").text.trim
+    if (first.contains("-").equals(false) && last.contains("-").equals(false)) {
+      if (first.nonEmpty && last.nonEmpty)
+        range = first + "-" + last + valA
+      //TODO think about the output format of the following conditions
+      if (first.nonEmpty && last.isEmpty)
+      //TODO should we replace "first" with "first + valA"?
+        range = first + "-" + ""
+      if (first.isEmpty && last.nonEmpty)
+      //TODO should we replace "last" with "last + valA"?
+        range = "" + "-" + last
+    }
+    if (first.contains("-") && last.contains("-")) {
+      if (first.nonEmpty && last.nonEmpty)
+        range = ((first.toInt - 1) * (-1)).toString + "-" + ((last.toInt - 1) * (-1)).toString + valB
+      //TODO think about the output format of the following conditions
+      if (first.nonEmpty && last.isEmpty)
+      //TODO should we remove "+ valB"
+        range = ((first.toInt - 1) * (-1)).toString + valB + "-" + ""
+      if (first.isEmpty && last.nonEmpty)
+      //TODO should we remove "+ valB"
+        range = "" + "-" + ((last.toInt - 1) * (-1)).toString + valB
+    }
+    if (first.contains("-") && last.contains("-").equals(false)) {
+      if (first.nonEmpty && last.nonEmpty)
+        range = ((first.toInt - 1) * (-1)).toString + valB + "-" + last + valA
+      //TODO think about the output format of the following conditions
+      if (first.nonEmpty && last.isEmpty)
+      //TODO should we remove "+ valB"
+        range = ((first.toInt - 1) * (-1)).toString + valB + "-" + ""
+      if (first.isEmpty && last.nonEmpty)
+      //TODO should we remove "+ valA"
+        range = "" + "-" + last + valA
 
     }
+    range
 
-    var dctTemporal: String = timeRange(parsedMetadata)
+  }
 
-    var dcxSpatialScheme: String = "degrees".trim
+  def setDcxSpatialScheme(): String = {
+    "degrees".trim
+  }
 
-    var dcxSpatialX: String = ""
-    if((parsedMetadata \\ "lat").text.nonEmpty)
-       dcxSpatialX = (parsedMetadata \\ "lat").text.trim
+  def extractDcxSpatialX(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "lat").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir) \\ "lat").text.trim
+    }
+    else ""
+  }
 
-    var dcxSpatialY: String = ""
-    if((parsedMetadata \\ "lng").text.nonEmpty)
-       dcxSpatialY = (parsedMetadata \\ "lng").text.trim
+  def extractDcxSpatialY(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "lng").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir) \\ "lng").text.trim
+    }
+    else ""
+  }
 
-    var dcIdentifierSid: String =""
-    if((parsedMetadata \\ "sid").text.nonEmpty)
-        dcIdentifierSid = (parsedMetadata \\ "sid").text.trim
+  def extractDcIdentifierSid(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "sid").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir) \\ "sid").text.trim
+    }
+    else ""
+  }
 
-    var dcIdentifierIdentifier: String =""
-    if((parsedMetadata \\ "identifier").text.nonEmpty)
-        dcIdentifierIdentifier = (parsedMetadata \\ "identifier").text.trim
+  def extractDcIdentifierIdentifier(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "identifier").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir) \\ "identifier").text.trim
+    }
+    else ""
+  }
 
-    var dcxRelationQualifier: String = " 'references' ".trim
-    var dcxRelationTitle: String = "Digital Collaboratory for Cultural Dendrochronology (DCCD)".trim
+  def setDcxRelationQualifier(): String = {
+    " 'references' ".trim
+  }
 
-    var dcxRelationLink: String =""
-    if((parsedMetadata \\ "sid").text.nonEmpty)
-        dcxRelationLink = "https://dendro.dans.knaw.nl/dccd/project/" + (parsedMetadata \\ "sid").text.trim
+  def setDcxRelationTitle(): String = {
+    "Digital Collaboratory for Cultural Dendrochronology (DCCD)".trim
+  }
 
-    var dcxRelationQualifier_2: String = " 'IsFormatOf' ".trim
+  def extractDcxRelationLink(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "sid").text.nonEmpty) {
+      "https://dendro.dans.knaw.nl/dccd/project/" + (getParsedMetadata(projectName, dir) \\ "sid").text.trim
+    }
+    else ""
+  }
 
-    var dcxRelationTitle_2: String =""
-    if((parsedMetadata \\ "sid").text.nonEmpty)
-        dcxRelationTitle_2 = (parsedMetadata \\ "sid").text.trim
+  def setDcxRelationQualifier_2(): String = {
+    " 'IsFormatOf' ".trim
+  }
 
-    var dcType: String = "Dataset".trim
+  def extractDcxRelationTitle_2(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "sid").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir) \\ "sid").text.trim
+    }
+    else ""
+  }
 
-    var language: String =""
-    if((parsedMetadata \\ "language").text.nonEmpty)
-        language = (parsedMetadata \\ "language").text.trim
+  def setDcType(): String = {
+    "Dataset".trim
+  }
 
-    var isoDefault: Locale = new Locale(language)
-    var languageISO3: String = isoDefault.getISO3Language
+  def extractLanguage(projectName: String, dir: String): String = {
+    if ((getParsedMetadata(projectName, dir) \\ "language").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir) \\ "language").text.trim
+    }
+    else ""
+  }
 
-    var ddmAccessRights: String = "NO_ACCESS".trim
-    var now: Date = Calendar.getInstance().getTime
-    var ddmAvailable: String = Format.format(now)
+  def getDefaultIsoForLanguage(language: String): Locale = {
+    new Locale(language)
+  }
 
-    var ddmAudience: String = "D37000".trim
+  def convertDefaultToISO3Language(defaultLanguage: Locale): String = {
+    defaultLanguage.getISO3Language
+  }
 
+  def setDdmAccessRights(): String = {
+    "NO_ACCESS".trim
+  }
 
-    var listDcSubject : List[String] = List()
-    var listDataset   : List[String] = List()
+  def setDdmAvailable(): String = {
+    Format.format(Calendar.getInstance().getTime)
+  }
 
-    if(dcSubject.nonEmpty)
-       listDcSubject = listDcSubject ::: List(dcSubject)
-    if(dcElementType.nonEmpty)
-       listDcSubject = listDcSubject ::: List(dcElementType)
-    if(dcObjectType.nonEmpty)
-       listDcSubject = listDcSubject ::: List(dcObjectType)
-    if(dcTypeMetadata.nonEmpty)
-       listDcSubject = listDcSubject ::: List(dcTypeMetadata)
-    if(dcCategory.nonEmpty)
-       listDcSubject = listDcSubject ::: List(dcCategory)
-    if(dcTaxon.nonEmpty)
-       listDcSubject = listDcSubject ::: List(dcTaxon)
+  def setDdmAudience(): String = {
+    "D37000".trim
+  }
 
 
-    var listDcTitle : List[String] = List(dcTitle)
-    var listDepositorId : List[String] = List(depositorId)
-    var listDcxCreatorOrg : List[String] = List(dcxCreatorOrganization)
-    var listDdmCreated : List[String] = List(ddmCreated)
-    var listDctRightsHolder : List[String] = List(dctRightsHolder)
-    var listDcDescription : List[String] = List(dcDescription)
-    var listDctTemporal : List[String] = List(dctTemporal)
-    var listDcxSpatialScheme: List[String] = List(dcxSpatialScheme)
-    var listDcxSpatialX: List[String] = List(dcxSpatialX)
-    var listDcxSpatialY: List[String] = List(dcxSpatialY)
-    var listDcIdentifier: List[String] = List(dcIdentifierSid, dcIdentifierIdentifier)
-    var listDcxRelationQualifier: List[String] = List(dcxRelationQualifier, dcxRelationQualifier_2)
-    var listDcxRelationTitle: List[String] = List(dcxRelationTitle, dcxRelationTitle_2)
-    var listDcxRelationLink: List[String] = List(dcxRelationLink)
-    var listDcType: List[String] = List(dcType)
-    var listDcLanguage: List[String] = List(languageISO3)
-    var listDdmAccessRights: List[String] = List(ddmAccessRights)
-    var listDdmAvailable: List[String] = List(ddmAvailable)
-    var listDdmAudience: List[String] = List(ddmAudience)
+  def createListDcSubject(listDcS: List[String], candidateSeq: Seq[String]): List[String] = {
+    var list = listDcS
+    var candidates = candidateSeq
+    for (i <- candidates) {
+      if (i.nonEmpty)
+        list = list ::: List(i)
+    }
+    list
+  }
 
-    var listDctAlternative   : List[String] = List()
-    var listDcxCreatorTitles : List[String] = List()
-    var listDcxCreatorInitials: List[String] = List()
-    var listDcxCreatorInsertions: List[String] = List()
-    var listDcxCreatorSurname: List[String] = List()
-    var listDcxCreatorDai: List[String] = List()
-    var listDcxCreatorRole: List[String] = List()
-    var listDcxContributorTitles: List[String] = List()
-    var listDcxContributorInitials: List[String] = List()
-    var listDcxContributorInsertions: List[String] = List()
-    var listDcxContributorSurname: List[String] = List()
-    var listDcxContributorDai: List[String] = List()
-    var listDcxContributorOrganization: List[String] = List()
-    var listDcxContributorRole: List[String] = List()
-    var listDcPublisher: List[String] = List()
-    var listDcSubjectScheme: List[String] = List()
-    var listTemporalScheme: List[String] = List()
-    var listDctSpatial: List[String] = List()
-    var listDctSpatialNorth: List[String] = List()
-    var listDctSpatialSouth: List[String] = List()
-    var listDctSpatialEast: List[String] = List()
-    var listDctSpatialWest: List[String] = List()
-    var listDcIdentifierType: List[String] = List()
-    var listDcFormat: List[String] = List()
-    var listDcSource: List[String] = List()
-    var listSfDomain: List[String] = List()
-    var listSfUser: List[String] = List()
-    var listSfCollection: List[String] = List()
-    var listAvSubtitles: List[String] = List()
-    var listAvFilePath: List[String] = List()
-    var listAvSubtitlesLanguage: List[String] = List()
-    var listSfPlayMode: List[String] = List()
-    var listDctDate: List[String] = List()
-    var listDctDateQualifier: List[String] = List()
-    var listFilePath: List[String] = List()
-    var listFileTitle: List[String] = List()
-    var listFileAccessibility: List[String] = List()
+
+  def createInfoPerProject(projectName: String, dir: String): Unit = {
+
+    var dirList: List[String] = directoryList(dir)
+
+    val parsedMetadata: NodeSeq = getParsedMetadata(projectName, dir)
+    val parsedUser: NodeSeq = getParsedMetadata(projectName, dir)
+
+    val dataset: String = extractDataset(projectName)
+    val dcTitle: String = extractDcTitle(projectName, dir)
+    val depositorId: String = extractDepositorId(projectName, dir)
+    val dcxCreatorOrganization: String = extractDcxCreatorOrganization(projectName, dir)
+    val ddmCreated: String = extractDdmCreated(projectName, dir)
+    val dctRightsHolder: String = extractDctRightsHolder(projectName, dir)
+    val dcDescription: String = setDcDescription()
+    val dcSubject: String = setDcSubject()
+
+    val dcElementTypes: List[String] = extractListOfDcElementTypes(projectName, dir)
+    val dcObjectTypes: List[String] = extractListOfDcObjectTypes(projectName, dir)
+    val dcTypeMetadata: List[String] = extractListOfDcTypesMetadata(projectName, dir)
+    val dcCategory: String = extractDcCategory(projectName, dir)
+    val dcTaxons: List[String] = extractListOfDcTaxons(projectName, dir)
+    val dctTemporal: String = extractTimeRange(projectName, dir)
+    val dcxSpatialScheme: String = setDcxSpatialScheme()
+    val dcxSpatialX: String = extractDcxSpatialX(projectName, dir)
+    val dcxSpatialY: String = extractDcxSpatialY(projectName, dir)
+    val dcIdentifierSid: String = extractDcIdentifierSid(projectName, dir)
+    val dcIdentifierIdentifier: String = extractDcIdentifierIdentifier(projectName, dir)
+    val dcxRelationQualifier: String = setDcxRelationQualifier()
+    val dcxRelationTitle: String = setDcxRelationTitle()
+    val dcxRelationLink: String = extractDcxRelationLink(projectName, dir)
+    val dcxRelationQualifier_2: String = setDcxRelationQualifier_2()
+    val dcxRelationTitle_2: String = extractDcxRelationTitle_2(projectName, dir)
+    val dcType: String = setDcType()
+    val language: String = extractLanguage(projectName, dir)
+    val isoDefault: Locale = getDefaultIsoForLanguage(language)
+    val languageISO3: String = convertDefaultToISO3Language(isoDefault)
+    val ddmAccessRights: String = setDdmAccessRights()
+    val ddmAvailable: String = setDdmAvailable()
+    val ddmAudience: String = setDdmAudience()
+
+    val setOfCandidatesForDcSubject: Seq[String] = Seq(dcSubject) ++ dcElementTypes ++ dcObjectTypes ++ dcTypeMetadata ++ dcTaxons ++ Seq(dcCategory)
+    val listDcSubject = createListDcSubject(List(), setOfCandidatesForDcSubject)
+
+    var listDataset: List[String] = List()
+
+    val listDcTitle: List[String] = List(dcTitle)
+    val listDepositorId: List[String] = List(depositorId)
+    val listDcxCreatorOrg: List[String] = List(dcxCreatorOrganization)
+    val listDdmCreated: List[String] = List(ddmCreated)
+    val listDctRightsHolder: List[String] = List(dctRightsHolder)
+    val listDcDescription: List[String] = List(dcDescription)
+    val listDctTemporal: List[String] = List(dctTemporal)
+    val listDcxSpatialScheme: List[String] = List(dcxSpatialScheme)
+    val listDcxSpatialX: List[String] = List(dcxSpatialX)
+    val listDcxSpatialY: List[String] = List(dcxSpatialY)
+    val listDcIdentifier: List[String] = List(dcIdentifierSid, dcIdentifierIdentifier)
+    val listDcxRelationQualifier: List[String] = List(dcxRelationQualifier, dcxRelationQualifier_2)
+    val listDcxRelationTitle: List[String] = List(dcxRelationTitle, dcxRelationTitle_2)
+    val listDcxRelationLink: List[String] = List(dcxRelationLink)
+    val listDcType: List[String] = List(dcType)
+    val listDcLanguage: List[String] = List(languageISO3)
+    val listDdmAccessRights: List[String] = List(ddmAccessRights)
+    val listDdmAvailable: List[String] = List(ddmAvailable)
+    val listDdmAudience: List[String] = List(ddmAudience)
+
+    val listDctAlternative: List[String] = List()
+    val listDcxCreatorTitles: List[String] = List()
+    val listDcxCreatorInitials: List[String] = List()
+    val listDcxCreatorInsertions: List[String] = List()
+    val listDcxCreatorSurname: List[String] = List()
+    val listDcxCreatorDai: List[String] = List()
+    val listDcxCreatorRole: List[String] = List()
+    val listDcxContributorTitles: List[String] = List()
+    val listDcxContributorInitials: List[String] = List()
+    val listDcxContributorInsertions: List[String] = List()
+    val listDcxContributorSurname: List[String] = List()
+    val listDcxContributorDai: List[String] = List()
+    val listDcxContributorOrganization: List[String] = List()
+    val listDcxContributorRole: List[String] = List()
+    val listDcPublisher: List[String] = List()
+    val listDcSubjectScheme: List[String] = List()
+    val listTemporalScheme: List[String] = List()
+    val listDctSpatial: List[String] = List()
+    val listDctSpatialNorth: List[String] = List()
+    val listDctSpatialSouth: List[String] = List()
+    val listDctSpatialEast: List[String] = List()
+    val listDctSpatialWest: List[String] = List()
+    val listDcIdentifierType: List[String] = List()
+    val listDcFormat: List[String] = List()
+    val listDcSource: List[String] = List()
+    val listSfDomain: List[String] = List()
+    val listSfUser: List[String] = List()
+    val listSfCollection: List[String] = List()
+    val listAvSubtitles: List[String] = List()
+    val listAvFilePath: List[String] = List()
+    val listAvSubtitlesLanguage: List[String] = List()
+    val listSfPlayMode: List[String] = List()
+    val listDctDate: List[String] = List()
+    val listDctDateQualifier: List[String] = List()
+    val listFilePath: List[String] = List()
+    val listFileTitle: List[String] = List()
+    val listFileAccessibility: List[String] = List()
 
 
     var multiValueMap: Map[String, List[String]] = Map(
       "DATASET" -> listDataset,
       "DC_TITLE" -> listDcTitle,
-      "DEPOSITOR_ID" -> listDepositorId ,
+      "DEPOSITOR_ID" -> listDepositorId,
       "DCX_CREATOR_ORGANIZATION" -> listDcxCreatorOrg,
       "DDM_CREATED" -> listDdmCreated,
       "DCT_RIGHTSHOLDER" -> listDctRightsHolder,
@@ -391,7 +527,9 @@ class DccdConvertExportApp(configuration: Configuration) {
       "DDM_ACCESSRIGHTS" -> listDdmAccessRights,
       "DDM_AVAILABLE" -> listDdmAvailable,
       "DDM_AUDIENCE" -> listDdmAudience,
-       /* The following columns do not contain any data !!!*/
+      //TODO The following columns do not contain any info.
+      //TODO We should decide whether to add any info to these columns
+      //TODO and which information to add if we need to fill in these columns
       "DCT_ALTERNATIVE" -> listDctAlternative,
       "DCX_CREATOR_TITLES" -> listDcxCreatorTitles,
       "DCX_CREATOR_INITIALS" -> listDcxCreatorInitials,
@@ -410,7 +548,7 @@ class DccdConvertExportApp(configuration: Configuration) {
       "DC_SUBJECT_SCHEME" -> listDcSubjectScheme,
       "DCT_TEMPORAL_SCHEME" -> listTemporalScheme,
       "DCT_SPATIAL" -> listDctSpatial,
-      "DCX_SPATIAL_NORTH"-> listDctSpatialNorth,
+      "DCX_SPATIAL_NORTH" -> listDctSpatialNorth,
       "DCX_SPATIAL_SOUTH" -> listDctSpatialSouth,
       "DCX_SPATIAL_EAST" -> listDctSpatialEast,
       "DCX_SPATIAL_WEST" -> listDctSpatialWest,
@@ -420,15 +558,15 @@ class DccdConvertExportApp(configuration: Configuration) {
       "SF_DOMAIN" -> listSfDomain,
       "SF_USER" -> listSfUser,
       "SF_COLLECTION" -> listSfCollection,
-       "AV_SUBTITLES" -> listAvSubtitles,
-       "AV_FILE_PATH" -> listAvFilePath,
-       "AV_SUBTITLES_LANGUAGE" -> listAvSubtitlesLanguage,
-       "SF_PLAY_MODE" -> listSfPlayMode,
-       "DCT_DATE" -> listDctDate,
-       "DCT_DATE_QUALIFIER" -> listDctDateQualifier,
-       "FILE_PATH" -> listFilePath,
-       "FILE_TITLE" -> listFileTitle,
-       "FILE_ACCESSIBILITY" ->listFileAccessibility
+      "AV_SUBTITLES" -> listAvSubtitles,
+      "AV_FILE_PATH" -> listAvFilePath,
+      "AV_SUBTITLES_LANGUAGE" -> listAvSubtitlesLanguage,
+      "SF_PLAY_MODE" -> listSfPlayMode,
+      "DCT_DATE" -> listDctDate,
+      "DCT_DATE_QUALIFIER" -> listDctDateQualifier,
+      "FILE_PATH" -> listFilePath,
+      "FILE_TITLE" -> listFileTitle,
+      "FILE_ACCESSIBILITY" -> listFileAccessibility
 
     )
 
@@ -442,181 +580,156 @@ class DccdConvertExportApp(configuration: Configuration) {
 
     var multiValueMapCsv: Map[String, List[String]] = multiValueMap
 
-    for(j <- 0 until maxListLength) {
-      for(k <- multiValueMap.keys){
-          if(k.contentEquals("DATASET")){
-            if(multiValueMap("DATASET").slice(j,j+1).isEmpty) {
-              var newList =  multiValueMapCsv("DATASET").repr ++ List(dataset)
-              multiValueMapCsv = multiValueMapCsv ++  Map("DATASET" -> newList)
-            }
+    for (j <- 0 until maxListLength) {
+      for (k <- multiValueMap.keys) {
+        if (k.contentEquals("DATASET")) {
+          if (multiValueMap("DATASET").slice(j, j + 1).isEmpty) {
+            var newList = multiValueMapCsv("DATASET").repr ++ List(dataset)
+            multiValueMapCsv = multiValueMapCsv ++ Map("DATASET" -> newList)
           }
-          if(!k.contentEquals("DATASET")){
-             if(multiValueMap(k).slice(j,j+1).isEmpty){
-               var newList =  multiValueMapCsv(k).repr ++ List("")
-               multiValueMapCsv = multiValueMapCsv ++  Map(k -> newList)
-            }
+        }
+        if (!k.contentEquals("DATASET")) {
+          if (multiValueMap(k).slice(j, j + 1).isEmpty) {
+            var newList = multiValueMapCsv(k).repr ++ List("")
+            multiValueMapCsv = multiValueMapCsv ++ Map(k -> newList)
           }
+        }
       }
     }
 
 
-
-
-    for(j <- 0 until maxListLength) {
+    for (j <- 0 until maxListLength) {
+      //TODO printer.printRecord didn't accept an iterable i like "aList.foreach(i => .." inside.
+      //TODO Sth should be implemented for csvFormat.getHeader.apply(i) where i=0,...,csvFormat.getHeader.length-1
       printer.printRecord(
-        multiValueMapCsv("DATASET").slice(j,j+1).head,
-        multiValueMapCsv("DC_TITLE").slice(j,j+1).head,
-        multiValueMapCsv("DCT_ALTERNATIVE").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_TITLES").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_INITIALS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_INSERTIONS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_SURNAME").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_DAI").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_ROLE").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_ORGANIZATION").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_TITLES").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_INITIALS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_INSERTIONS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_SURNAME").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_DAI").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_ORGANIZATION").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_ROLE").slice(j,j+1).head,
-        multiValueMapCsv("DDM_CREATED").slice(j,j+1).head,
-        multiValueMapCsv("DCT_RIGHTSHOLDER").slice(j,j+1).head,
-        multiValueMapCsv("DC_PUBLISHER").slice(j,j+1).head,
-        multiValueMapCsv("DC_DESCRIPTION").slice(j,j+1).head,
-        multiValueMapCsv("DC_SUBJECT_SCHEME").slice(j,j+1).head,
-        multiValueMapCsv("DC_SUBJECT").slice(j,j+1).head,
-        multiValueMapCsv("DCT_TEMPORAL_SCHEME").slice(j,j+1).head,
-        multiValueMapCsv("DCT_TEMPORAL").slice(j,j+1).head,
-        multiValueMapCsv("DCT_SPATIAL").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_SCHEME").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_X").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_Y").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_NORTH").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_SOUTH").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_EAST").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_WEST").slice(j,j+1).head,
-        multiValueMapCsv("DC_IDENTIFIER_TYPE").slice(j,j+1).head,
-        multiValueMapCsv("DC_IDENTIFIER").slice(j,j+1).head,
-        multiValueMapCsv("DCX_RELATION_QUALIFIER").slice(j,j+1).head,
-        multiValueMapCsv("DCX_RELATION_TITLE").slice(j,j+1).head,
-        multiValueMapCsv("DCX_RELATION_LINK").slice(j,j+1).head,
-        multiValueMapCsv("DC_TYPE").slice(j,j+1).head,
-        multiValueMapCsv("DC_FORMAT").slice(j,j+1).head,
-        multiValueMapCsv("DC_LANGUAGE").slice(j,j+1).head,
-        multiValueMapCsv("DC_SOURCE").slice(j,j+1).head,
-        multiValueMapCsv("DDM_ACCESSRIGHTS").slice(j,j+1).head,
-        multiValueMapCsv("DDM_AVAILABLE").slice(j,j+1).head,
-        multiValueMapCsv("DDM_AUDIENCE").slice(j,j+1).head,
-        multiValueMapCsv("DEPOSITOR_ID").slice(j,j+1).head,
-        multiValueMapCsv("SF_DOMAIN").slice(j,j+1).head,
-        multiValueMapCsv("SF_USER").slice(j,j+1).head,
-        multiValueMapCsv("SF_COLLECTION").slice(j,j+1).head,
-        multiValueMapCsv("AV_SUBTITLES").slice(j,j+1).head,
-        multiValueMapCsv("AV_FILE_PATH").slice(j,j+1).head,
-        multiValueMapCsv("AV_SUBTITLES_LANGUAGE").slice(j,j+1).head,
-        multiValueMapCsv("SF_PLAY_MODE").slice(j,j+1).head,
-        multiValueMapCsv("DCT_DATE").slice(j,j+1).head,
-        multiValueMapCsv("DCT_DATE_QUALIFIER").slice(j,j+1).head,
-        multiValueMapCsv("FILE_PATH").slice(j,j+1).head,
-        multiValueMapCsv("FILE_TITLE").slice(j,j+1).head,
-        multiValueMapCsv("FILE_ACCESSIBILITY").slice(j,j+1).head
+        multiValueMapCsv(csvFormat.getHeader.apply(0)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(1)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(2)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(3)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(4)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(5)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(6)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(7)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(8)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(9)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(10)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(11)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(12)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(13)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(14)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(15)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(16)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(17)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(18)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(19)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(20)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(21)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(22)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(23)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(24)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(25)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(26)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(27)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(28)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(29)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(30)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(31)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(32)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(33)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(34)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(35)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(36)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(37)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(38)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(39)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(40)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(41)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(42)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(43)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(44)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(45)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(46)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(47)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(48)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(49)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(50)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(51)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(52)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(53)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(54)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(55)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(56)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(57)).slice(j, j + 1).head
       )
+
+      //TODO printer.printRecord didn't accept an iterable i like "...foreach(i => .." inside.
+      //TODO Sth should be implemented for csvFormat.getHeader.apply(i) where i=0,...,csvFormat.getHeader.length-1
       csvPrinterToFile.printRecord(
-        multiValueMapCsv("DATASET").slice(j,j+1).head,
-        multiValueMapCsv("DC_TITLE").slice(j,j+1).head,
-        multiValueMapCsv("DCT_ALTERNATIVE").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_TITLES").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_INITIALS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_INSERTIONS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_SURNAME").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_DAI").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_ROLE").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CREATOR_ORGANIZATION").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_TITLES").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_INITIALS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_INSERTIONS").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_SURNAME").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_DAI").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_ORGANIZATION").slice(j,j+1).head,
-        multiValueMapCsv("DCX_CONTRIBUTOR_ROLE").slice(j,j+1).head,
-        multiValueMapCsv("DDM_CREATED").slice(j,j+1).head,
-        multiValueMapCsv("DCT_RIGHTSHOLDER").slice(j,j+1).head,
-        multiValueMapCsv("DC_PUBLISHER").slice(j,j+1).head,
-        multiValueMapCsv("DC_DESCRIPTION").slice(j,j+1).head,
-        multiValueMapCsv("DC_SUBJECT_SCHEME").slice(j,j+1).head,
-        multiValueMapCsv("DC_SUBJECT").slice(j,j+1).head,
-        multiValueMapCsv("DCT_TEMPORAL_SCHEME").slice(j,j+1).head,
-        multiValueMapCsv("DCT_TEMPORAL").slice(j,j+1).head,
-        multiValueMapCsv("DCT_SPATIAL").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_SCHEME").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_X").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_Y").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_NORTH").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_SOUTH").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_EAST").slice(j,j+1).head,
-        multiValueMapCsv("DCX_SPATIAL_WEST").slice(j,j+1).head,
-        multiValueMapCsv("DC_IDENTIFIER_TYPE").slice(j,j+1).head,
-        multiValueMapCsv("DC_IDENTIFIER").slice(j,j+1).head,
-        multiValueMapCsv("DCX_RELATION_QUALIFIER").slice(j,j+1).head,
-        multiValueMapCsv("DCX_RELATION_TITLE").slice(j,j+1).head,
-        multiValueMapCsv("DCX_RELATION_LINK").slice(j,j+1).head,
-        multiValueMapCsv("DC_TYPE").slice(j,j+1).head,
-        multiValueMapCsv("DC_FORMAT").slice(j,j+1).head,
-        multiValueMapCsv("DC_LANGUAGE").slice(j,j+1).head,
-        multiValueMapCsv("DC_SOURCE").slice(j,j+1).head,
-        multiValueMapCsv("DDM_ACCESSRIGHTS").slice(j,j+1).head,
-        multiValueMapCsv("DDM_AVAILABLE").slice(j,j+1).head,
-        multiValueMapCsv("DDM_AUDIENCE").slice(j,j+1).head,
-        multiValueMapCsv("DEPOSITOR_ID").slice(j,j+1).head,
-        multiValueMapCsv("SF_DOMAIN").slice(j,j+1).head,
-        multiValueMapCsv("SF_USER").slice(j,j+1).head,
-        multiValueMapCsv("SF_COLLECTION").slice(j,j+1).head,
-        multiValueMapCsv("AV_SUBTITLES").slice(j,j+1).head,
-        multiValueMapCsv("AV_FILE_PATH").slice(j,j+1).head,
-        multiValueMapCsv("AV_SUBTITLES_LANGUAGE").slice(j,j+1).head,
-        multiValueMapCsv("SF_PLAY_MODE").slice(j,j+1).head,
-        multiValueMapCsv("DCT_DATE").slice(j,j+1).head,
-        multiValueMapCsv("DCT_DATE_QUALIFIER").slice(j,j+1).head,
-        multiValueMapCsv("FILE_PATH").slice(j,j+1).head,
-        multiValueMapCsv("FILE_TITLE").slice(j,j+1).head,
-        multiValueMapCsv("FILE_ACCESSIBILITY").slice(j,j+1).head
+        multiValueMapCsv(csvFormat.getHeader.apply(0)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(1)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(2)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(3)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(4)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(5)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(6)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(7)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(8)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(9)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(10)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(11)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(12)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(13)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(14)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(15)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(16)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(17)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(18)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(19)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(20)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(21)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(22)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(23)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(24)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(25)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(26)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(27)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(28)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(29)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(30)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(31)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(32)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(33)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(34)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(35)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(36)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(37)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(38)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(39)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(40)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(41)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(42)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(43)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(44)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(45)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(46)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(47)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(48)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(49)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(50)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(51)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(52)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(53)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(54)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(55)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(56)).slice(j, j + 1).head,
+        multiValueMapCsv(csvFormat.getHeader.apply(57)).slice(j, j + 1).head
       )
-
     }
-
-
-
-
-
-
-
-/*  PREVIOUS PRINTING FORMAT
-    printer.printRecord( multiValueMap("DATASET").slice(1,2).head, dcTitle, depositorId, dcxCreatorOrganization, ddmCreated, dctRightsHolder, dcDescription,  dcSubject,     dctTemporal, dcxSpatialScheme, dcxSpatialX, dcxSpatialY, dcIdentifierSid,        dcxRelationQualifier,    dcxRelationTitle,   dcxRelationLink, dcType, languageISO3, ddmAccessRights, ddmAvailable, ddmAudience)
-    printer.printRecord(dataset,    "",        "",         "",                    "",           "",             "",         dcElementType,     "",            "",                 "",        "",   dcIdentifierIdentifier,  dcxRelationQualifier_2,  dcxRelationTitle_2,       "",          "",        "",           "",               "",           "")
-    printer.printRecord(dataset,    "",        "",         "",                    "",           "",             "",         dcObjectType,      "",            "",                 "",        "",          "",                        "",                  "",                  "",          "",        "",           "",               "",           "")
-    printer.printRecord(dataset,    "",        "",         "",                    "",           "",             "",         dcTypeMetadata,    "",            "",                 "",        "",          "",                        "",                  "",                  "",          "",        "",           "",               "",           "")
-    printer.printRecord(dataset,    "",        "",         "",                    "",           "",             "",         dcCategory,        "",            "",                 "",        "",          "",                        "",                  "",                  "",          "",        "",           "",               "",           "")
-    printer.printRecord(dataset,    "",        "",         "",                    "",           "",             "",         dcTaxon,           "",            "",                 "",        "",          "",                        "",                  "",                  "",          "",        "",           "",               "",           "")
-
-*/
-/*
-    csvPrinterToFile.printRecord(dataset, dcTitle, depositorId, dcxCreatorOrganization, ddmCreated, dctRightsHolder, dcDescription, dcSubject,   dctTemporal, dcxSpatialScheme, dcxSpatialX, dcxSpatialY,     dcIdentifierSid,     dcxRelationQualifier,    dcxRelationTitle,   dcxRelationLink, dcType, languageISO3, ddmAccessRights, ddmAvailable, ddmAudience)
-    csvPrinterToFile.printRecord(dataset,   "",        "",                "",              "",           "",             "",      dcElementType,     "",          "",              "",            "",      dcIdentifierIdentifier, dcxRelationQualifier_2,  dcxRelationTitle_2,      "",            "",       "",           "",             "",          "")
-    csvPrinterToFile.printRecord(dataset,   "",        "",                "",              "",           "",             "",      dcObjectType,      "",          "",              "",            "",              "",                   "",                    "",                  "",            "",       "",           "",             "",          "")
-    csvPrinterToFile.printRecord(dataset,   "",        "",                "",              "",           "",             "",      dcTypeMetadata,    "",          "",              "",            "",              "",                   "",                    "",                  "",            "",       "",           "",             "",          "")
-    csvPrinterToFile.printRecord(dataset,   "",        "",                "",              "",           "",             "",      dcCategory,        "",          "",              "",            "",              "",                   "",                    "",                  "",            "",       "",           "",             "",          "")
-    csvPrinterToFile.printRecord(dataset,   "",        "",                "",              "",           "",             "",      dcTaxon,           "",          "",              "",            "",              "",                   "",                    "",                  "",            "",       "",           "",             "",          "")
-
-    //csvPrinterToFile.printRecord(multiValueMap)
-    */
 
     csvPrinterToFile.flush()
     printer.flush()
 
   }
-
 
 
   def createCsvReportFromDccdExport(dir: String): String = {
