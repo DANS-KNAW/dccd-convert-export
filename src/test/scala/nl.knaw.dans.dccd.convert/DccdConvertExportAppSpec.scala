@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.dccd.convert
 
-import java.io._
+import java.io.{ File, FileWriter }
 import java.nio.file.{ Path, Paths }
 import java.text.SimpleDateFormat
 import java.util.{ Calendar, GregorianCalendar, Locale }
@@ -23,8 +23,7 @@ import java.util.{ Calendar, GregorianCalendar, Locale }
 import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, ExtendedBufferedReader }
 
 import scala.collection.mutable._
-import scala.io.Source
-import scala.io.Source.{ fromInputStream, fromString }
+import scala.io.Source.fromString
 import scala.util.Try
 import scala.xml.parsing.ConstructingParser.fromSource
 import scala.xml.{ Elem, NodeSeq, TopScope, XML }
@@ -133,29 +132,6 @@ class DccdConvertExportApp(configuration: Configuration) {
     getPath(dir)
   }
 
-  //TODO I need an actual data for "UserIdEasyMap.csv" file that will contain
-  //TODO DepositorIds and corresponding actual Easy UserIds
-  //TODO Ex: DepositorIdInUserXmlFile, CorrespondingEasyUserId
-  //TODO     AnotherDepositorIdInUserXmlFile, CorrespondingEasyUserId
-  //TODO Sequence of DepositorIds in the first column do not matter
-
-  def UserIdMappingFilePath(dir: String): String = {
-    directoryPath(dir).toString + "/UserIdEasyMap.csv"
-  }
-
-  def CSVReader(absPath: String, delimiter: String): List[scala.Seq[String]] = {
-    Source.fromFile(absPath).getLines().toList map (_.split("""\""" + delimiter).toSeq)
-  }
-
-  def mapDepositorIdActualEasyUserId(path: String): Map[String, String] = {
-    var map: Map[String, String] = Map()
-    CSVReader(path, ",").foreach(i => { map.put(i.head, i.apply(1)) })
-    map
-  }
-
-  //TODO We should make a decision for the path of the "UserIdEasyMap.csv" file
-  val pathOfUserIdEasyMap = UserIdMappingFilePath("data")
-
   def directoryList(dir: String): List[String] = {
     getListOfSubDirectories(getPath(dir).toString).toList
   }
@@ -188,16 +164,8 @@ class DccdConvertExportApp(configuration: Configuration) {
     (getParsedMetadata(projectName, dir) \\ "title").text.trim
   }
 
-  //TODO else case should be removed after getting the actual data for UserIdEasyMap
   def extractDepositorId(projectName: String, dir: String): String = {
-    val depId: String = (getParsedUser(projectName, dir) \\ "id").text.trim
-    var userId: String = depId
-    if (mapDepositorIdActualEasyUserId(pathOfUserIdEasyMap).keySet.contains(depId)) {
-      for ((k, v) <- mapDepositorIdActualEasyUserId(pathOfUserIdEasyMap))
-        if (k == depId)
-          userId = v
-    }
-    userId
+    (getParsedUser(projectName, dir) \\ "title").text.trim
   }
 
   def extractDcxCreatorOrganization(projectName: String, dir: String): String = {
