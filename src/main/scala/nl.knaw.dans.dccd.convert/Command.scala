@@ -36,18 +36,18 @@ object Command extends App with DebugEnhancedLogging {
 
     case Some(runService @ commandLine.runService) =>
       app.createFullReport()
-      Try {"full report"} match {
-        case Failure(_) => Try{"failure: Full report dccd-convert"}
-        case Success(_) => Try{"success: Full report dccd-convert"}
+      Try { "full report" } match {
+        case Failure(_) => Try { "failure: Full report dccd-convert" }
+        case Success(_) => Try { "success: Full report dccd-convert" }
       }
     case _ =>
-      Try {""} match {
-        case Failure(_) => Try{"failure: ?"}
-        case Success(_) => Try{"unknown command"}
+      Try { "" } match {
+        case Failure(_) => Try { "failure: ?" }
+        case Success(_) => Try { "unknown command" }
       }
 
 
-      //???
+    //???
   }
 
   result.map(msg => Console.err.println(s"OK: $msg")).doIfFailure {

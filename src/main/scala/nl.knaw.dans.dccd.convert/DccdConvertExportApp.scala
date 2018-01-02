@@ -17,121 +17,30 @@ package nl.knaw.dans.dccd.convert
 
 import java.io._
 import java.nio.file.{ Path, Paths }
-import java.text.SimpleDateFormat
 import java.util.{ Calendar, GregorianCalendar, Locale }
 
-import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, ExtendedBufferedReader }
+import nl.knaw.dans.dccd._
+import org.apache.commons.csv.{ CSVParser, CSVPrinter, ExtendedBufferedReader }
 
 import scala.collection.mutable._
-import scala.io.Source
-import scala.io.Source.{ fromInputStream, fromString }
+import scala.io.Source.fromInputStream
 import scala.util.Try
 import scala.xml.parsing.ConstructingParser.fromSource
-import scala.xml.{ Elem, NodeSeq, TopScope, XML }
+import scala.xml.{ Elem, NodeSeq, XML }
 
 
 class DccdConvertExportApp(configuration: Configuration) {
-
-  def getListOfSubDirectories(directoryName: String): Array[String] = {
-    new File(directoryName)
-      .listFiles
-      .filter(_.isDirectory)
-      .map(_.getName)
-  }
-
-  def getListOfFiles(dir: String): List[File] = {
-    val d = new File(dir)
-    if (d.exists && d.isDirectory) {
-      d.listFiles.filter(_.isFile).toList
-    }
-    else {
-      List[File]()
-    }
-  }
 
   def getPath(dir: String): Path = {
     Paths.get(configuration.properties.getString(dir))
   }
 
-
-  val csvFormat: CSVFormat = CSVFormat.RFC4180.withHeader(
-    "DATASET",
-    "DC_TITLE",
-    "DCT_ALTERNATIVE",
-    "DCX_CREATOR_TITLES",
-    "DCX_CREATOR_INITIALS",
-    "DCX_CREATOR_INSERTIONS",
-    "DCX_CREATOR_SURNAME",
-    "DCX_CREATOR_DAI",
-    "DCX_CREATOR_ROLE",
-    "DCX_CREATOR_ORGANIZATION",
-    "DCX_CONTRIBUTOR_TITLES",
-    "DCX_CONTRIBUTOR_INITIALS",
-    "DCX_CONTRIBUTOR_INSERTIONS",
-    "DCX_CONTRIBUTOR_SURNAME",
-    "DCX_CONTRIBUTOR_DAI",
-    "DCX_CONTRIBUTOR_ORGANIZATION",
-    "DCX_CONTRIBUTOR_ROLE",
-    "DDM_CREATED",
-    "DCT_RIGHTSHOLDER",
-    "DC_PUBLISHER",
-    "DC_DESCRIPTION",
-    "DC_SUBJECT_SCHEME",
-    "DC_SUBJECT",
-    "DCT_TEMPORAL_SCHEME",
-    "DCT_TEMPORAL",
-    "DCT_SPATIAL",
-    "DCX_SPATIAL_SCHEME",
-    "DCX_SPATIAL_X",
-    "DCX_SPATIAL_Y",
-    "DCX_SPATIAL_NORTH",
-    "DCX_SPATIAL_SOUTH",
-    "DCX_SPATIAL_EAST",
-    "DCX_SPATIAL_WEST",
-    "DC_IDENTIFIER_TYPE",
-    "DC_IDENTIFIER",
-    "DCX_RELATION_QUALIFIER",
-    "DCX_RELATION_TITLE",
-    "DCX_RELATION_LINK",
-    "DC_TYPE",
-    "DC_FORMAT",
-    "DC_LANGUAGE",
-    "DC_SOURCE",
-    "DDM_ACCESSRIGHTS",
-    "DDM_AVAILABLE",
-    "DDM_AUDIENCE",
-    "DEPOSITOR_ID",
-    "SF_DOMAIN",
-    "SF_USER",
-    "SF_COLLECTION",
-    "AV_SUBTITLES",
-    "AV_FILE_PATH",
-    "AV_SUBTITLES_LANGUAGE",
-    "SF_PLAY_MODE",
-    "DCT_DATE",
-    "DCT_DATE_QUALIFIER",
-    "FILE_PATH",
-    "FILE_TITLE",
-    "FILE_ACCESSIBILITY").withDelimiter(',')
-
-
-  val out: Appendable = new StringBuffer()
-  val printer: CSVPrinter = csvFormat.print(out)
-
-  val csvPrinterToFile = new CSVPrinter(new FileWriter("./data/dccdConvert" + ".csv"), csvFormat.withDelimiter(','))
-
-  private def parse(s: String) = fromSource(fromString(s), preserveWS = true).element(TopScope)
-
-  private def parseNoWS(s: String) = fromSource(fromString(s), preserveWS = false).element(TopScope)
-
-  val Format = new SimpleDateFormat("yyyy-MM-dd")
-  var range: String = ""
-  val valA: String = " AD"
-  val valB: String = " BC"
-
   def directoryPath(dir: String): Path = {
     getPath(dir)
   }
+
+  val csvPrinterToFile = new CSVPrinter(new FileWriter(directoryPath("data").toString + "/instructions" + ".csv"), csvFormat.withDelimiter(','))
+
 
   //TODO I need an actual data for "UserIdEasyMap.csv" file that will contain
   //TODO DepositorIds and corresponding actual Easy UserIds
@@ -143,25 +52,11 @@ class DccdConvertExportApp(configuration: Configuration) {
     directoryPath(dir).toString + "/UserIdEasyMap.csv"
   }
 
-  def CSVReader(absPath: String, delimiter: String): List[scala.Seq[String]] = {
-    Source.fromFile(absPath).getLines().toList map (_.split("""\""" + delimiter).toSeq)
-  }
-
-  def mapDepositorIdActualEasyUserId(path: String): Map[String, String] = {
-    var map: Map[String, String] = Map()
-    CSVReader(path, ",").foreach(i => { map.put(i.head, i.apply(1)) })
-    map
-  }
-
   //TODO We should make a decision for the path of the "UserIdEasyMap.csv" file
-  val pathOfUserIdEasyMap = UserIdMappingFilePath("data")
+  val pathOfUserIdEasyMap: String = UserIdMappingFilePath("data")
 
   def directoryList(dir: String): List[String] = {
     getListOfSubDirectories(getPath(dir).toString).toList
-  }
-
-  def directoryOfData(projectName: String, path: Path, relativePathOfData: String): String = {
-    path.toString + "/" + projectName + relativePathOfData
   }
 
   def getMetadataAsXmlTreeElem(projectName: String, dir: String): Elem = {
@@ -180,10 +75,6 @@ class DccdConvertExportApp(configuration: Configuration) {
     parseNoWS(getUserAsXmlTreeElem(projectName, dir).toString())
   }
 
-  def extractDataset(projectName: String): String = {
-    projectName
-  }
-
   def extractDcTitle(projectName: String, dir: String): String = {
     (getParsedMetadata(projectName, dir) \\ "title").text.trim
   }
@@ -198,6 +89,10 @@ class DccdConvertExportApp(configuration: Configuration) {
           userId = v
     }
     userId
+  }
+
+  def extractDataset(projectName: String): String = {
+    projectName
   }
 
   def extractDcxCreatorOrganization(projectName: String, dir: String): String = {
@@ -421,18 +316,6 @@ class DccdConvertExportApp(configuration: Configuration) {
     "D37000".trim
   }
 
-
-  def createListDcSubject(listDcS: List[String], candidateSeq: Seq[String]): List[String] = {
-    var list = listDcS
-    var candidates = candidateSeq
-    for (i <- candidates) {
-      if (i.nonEmpty)
-        list = list ::: List(i)
-    }
-    list
-  }
-
-
   def createInfoPerProject(projectName: String, dir: String): Unit = {
 
     var dirList: List[String] = directoryList(dir)
@@ -610,20 +493,20 @@ class DccdConvertExportApp(configuration: Configuration) {
       }
     }
 
-    var multiValueMapCsv: Map[String, List[String]] = multiValueMap
+    var multiValueMapCsv: scala.collection.mutable.Map[String, List[String]] = multiValueMap
 
     for (j <- 0 until maxListLength) {
       for (k <- multiValueMap.keys) {
         if (k.contentEquals("DATASET")) {
           if (multiValueMap("DATASET").slice(j, j + 1).isEmpty) {
             var newList = multiValueMapCsv("DATASET").repr ++ List(dataset)
-            multiValueMapCsv = multiValueMapCsv ++ Map("DATASET" -> newList)
+            multiValueMapCsv = multiValueMapCsv ++ scala.collection.mutable.Map("DATASET" -> newList)
           }
         }
         if (!k.contentEquals("DATASET")) {
           if (multiValueMap(k).slice(j, j + 1).isEmpty) {
             var newList = multiValueMapCsv(k).repr ++ List("")
-            multiValueMapCsv = multiValueMapCsv ++ Map(k -> newList)
+            multiValueMapCsv = multiValueMapCsv ++ scala.collection.mutable.Map(k -> newList)
           }
         }
       }
