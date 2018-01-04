@@ -22,6 +22,8 @@ import nl.knaw.dans.lib.error._
 import org.apache.commons.csv.{ CSVParser, ExtendedBufferedReader }
 import org.scalatest.{ FlatSpec, Matchers, _ }
 
+import scala.collection.mutable
+import scala.io.Source
 import scala.util.{ Failure, Success, Try }
 import scala.xml.XML
 import scala.xml.parsing.ConstructingParser.fromSource
@@ -36,7 +38,7 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
   it should "create an Array[String] containing the names of data files in the projects directory" in {
     var array: Array[String] = Array()
     array = getListOfSubDirectories("./src/test/resources/data/projects")
-    //TODO The elements of the following array is sorted according to increasing nbrs considering the first two digits.
+    //TODO The elements of the following array are sorted according to increasing nbrs considering the first two digits.
     //TODO These are the data files in my "./src/test/resources/data/projects" directory.
     //TODO I haven't shared these test files in my pull request
     //TODO I can share them if we decide to use these set of data files as test resources
@@ -157,13 +159,46 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
     csvFormat.getHeader.tail should contain("FILE_ACCESSIBILITY")
   }
 
-  //val out: Appendable = new StringBuffer()
+  def CSVReader(absPath: String, delimiter: String): List[scala.Seq[String]] = {
+    Source.fromFile(absPath).getLines().toList map (_.split("""\""" + delimiter).toSeq)
+  }
 
-  //val printer: CSVPrinter = csvFormat.print(out)
+  "CSVReader(\"./src/test/resources/data/UserIdEasyMap.csv\", \",\")" should
+    "throw a NullPointer exception if the csv file does not exists" in {
+    def getCsvFile() = {
+      Try { CSVReader("./src/test/resources/data/UserIdEasyMap.csv", ",") }
+      match {
+        case Failure(_) => throw new java.lang.NullPointerException("NullPointerException thrown")
+        case Success(_) => "success"
+      }
+    }
 
-  //  parseNoWS(XML.loadFile("./src/test/resources/data/projects/dccd_93/administrative/project_metadata.xml").toString) shouldBe a[Success[_]]
-  //printer.printRecord shouldBe a[Success[_]]
-  //printer.printRecord shouldBe a[Success[_]]
+    if (getCsvFile() != "success")
+      a[NullPointerException] should be thrownBy { getCsvFile() }
+
+  }
+
+  "CSVReader" should "read a csv file and provide a list of sequences where each line is a sequence having a size of 2" in {
+
+    CSVReader("./src/test/resources/data/UserIdEasyMap.csv", ",").foreach(i => { i.head.nonEmpty shouldBe true })
+
+    CSVReader("./src/test/resources/data/UserIdEasyMap.csv", ",").foreach(i => { i.apply(1).nonEmpty shouldBe true })
+
+    CSVReader("./src/test/resources/data/UserIdEasyMap.csv", ",").foreach(i => { a[ArrayIndexOutOfBoundsException] shouldBe thrownBy { i.apply(2).nonEmpty } })
+
+  }
+
+  "mapDepositorIdActualEasyUserId" should
+    "provide a map with keys corresponding to depositorIds and values to their associated actual easyUsers" in {
+
+    mapDepositorIdActualEasyUserId("./src/test/resources/data/UserIdEasyMap.csv").keys.nonEmpty shouldBe true
+    mapDepositorIdActualEasyUserId("./src/test/resources/data/UserIdEasyMap.csv")("DEPOSITOR_ID                   ").leftSideValue shouldBe "EASYuserId"
+
+  }
+
+  "createListDcSubject" should "create a list from a set of candidates" in {
+    createListDcSubject(List(), mutable.Seq("a", "b", "c")) shouldBe List("a", "b", "c")
+  }
 
 
 }
