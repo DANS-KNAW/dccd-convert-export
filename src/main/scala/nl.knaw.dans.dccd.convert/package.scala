@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat
 
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
-import scala.collection.mutable.Seq
+import scala.collection.mutable
 import scala.io.Source
 import scala.io.Source.fromString
 import scala.util.{ Failure, Success, Try }
@@ -101,8 +101,6 @@ package object dccd {
 
   val printer: CSVPrinter = csvFormat.print(out)
 
-  def parse(s: String): NodeSeq = fromSource(fromString(s), preserveWS = true).element(TopScope)
-
   def parseNoWS(s: String): NodeSeq = fromSource(fromString(s), preserveWS = false).element(TopScope)
 
   val Format = new SimpleDateFormat("yyyy-MM-dd")
@@ -124,7 +122,7 @@ package object dccd {
     path.toString + "/" + projectName + relativePathOfData
   }
 
-  def createListDcSubject(listDcS: List[String], candidateSeq: Seq[String]): List[String] = {
+  def createListDcSubject(listDcS: List[String], candidateSeq: mutable.Seq[String]): List[String] = {
     var list = listDcS
     var candidates = candidateSeq
     for (i <- candidates) {
