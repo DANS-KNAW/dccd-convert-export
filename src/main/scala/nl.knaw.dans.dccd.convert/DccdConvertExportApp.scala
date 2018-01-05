@@ -41,7 +41,6 @@ class DccdConvertExportApp(configuration: Configuration) {
 
   val csvPrinterToFile = new CSVPrinter(new FileWriter(directoryPath("data").toString + "/instructions" + ".csv"), csvFormat.withDelimiter(','))
 
-
   //TODO I need an actual data for "UserIdEasyMap.csv" file that will contain
   //TODO DepositorIds and corresponding actual Easy UserIds
   //TODO Ex: DepositorIdInUserXmlFile, CorrespondingEasyUserId
@@ -505,9 +504,8 @@ class DccdConvertExportApp(configuration: Configuration) {
       }
     }
 
-
     for (j <- 0 until maxListLength) {
-      //TODO printer.printRecord didn't allow an iterable i like "aList.foreach(i => .." inside.
+      //TODO printer.printRecord and csvPrinterToFile.printRecord didn't allow an iterable i like "aList.foreach(i => .." inside.
       //TODO thus I generated a comma seperated single string consisting of the elements I would like to print in a row of the csv
       //TODO and printed them to the associated row by using a CSVParser on the string I created
 
@@ -532,73 +530,12 @@ class DccdConvertExportApp(configuration: Configuration) {
 
       var formatRecords: CSVFormat = CSVFormat.RFC4180.withDelimiter(',').withSkipHeaderRecord().withAllowMissingColumnNames()
 
-      var records = CSVParser.parse(rowString, formatRecords)
+      var records= CSVParser.parse(rowString, formatRecords)
 
       printer.printRecords(records)
 
+      csvPrinterToFile.printRecords(CSVParser.parse(rowString, csvFormat))
 
-      //TODO printer.printRecord didn't accept an iterable i like "...foreach(i => .." inside.
-      //TODO Sth should be implemented for csvFormat.getHeader.apply(i) where i=0,...,csvFormat.getHeader.length-1
-      csvPrinterToFile.printRecord(
-        multiValueMapCsv(csvFormat.getHeader.apply(0)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(1)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(2)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(3)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(4)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(5)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(6)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(7)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(8)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(9)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(10)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(11)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(12)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(13)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(14)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(15)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(16)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(17)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(18)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(19)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(20)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(21)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(22)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(23)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(24)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(25)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(26)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(27)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(28)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(29)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(30)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(31)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(32)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(33)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(34)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(35)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(36)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(37)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(38)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(39)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(40)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(41)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(42)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(43)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(44)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(45)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(46)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(47)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(48)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(49)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(50)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(51)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(52)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(53)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(54)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(55)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(56)).slice(j, j + 1).head,
-        multiValueMapCsv(csvFormat.getHeader.apply(57)).slice(j, j + 1).head
-      )
     }
 
     csvPrinterToFile.flush()
