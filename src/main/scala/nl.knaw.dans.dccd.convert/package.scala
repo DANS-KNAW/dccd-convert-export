@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
 import scala.collection.mutable
+import scala.collection.mutable.Map
 import scala.io.Source
 import scala.io.Source.fromString
 import scala.util.{ Failure, Success, Try }
@@ -131,6 +132,18 @@ package object dccd {
     }
     list
   }
+
+  def maxLengthOfList(multiValMap: Map[String, List[String]]): Int = {
+    var maxLength: Int = 0
+    for (k <- multiValMap.keys) {
+      if (multiValMap(k).length > maxLength) {
+        maxLength = multiValMap(k).length
+      }
+    }
+    maxLength
+  }
+
+
 
   implicit class TryExtensions2[T](val t: Try[T]) extends AnyVal {
     // TODO candidate for dans-scala-lib
