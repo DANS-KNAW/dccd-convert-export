@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<project>
+    <sid>d</sid>
+    <stateChanged>2000-08-29T15:29:51.526Z</stateChanged>
+    <title>da d&apos;une</title>
+    <identifier>A/K</identifier>
+    <category>pein</category>
+    <investigator>J.</investigator>
+    <laboratories>
+        <laboratory>Ilab,,</laboratory>
+    </laboratories>
+    <types>
+        <type>d</type>
+    </types>
+    <ownerOrganizationId>Ow</ownerOrganizationId>
+    <language>fr</language>
+    <location>
+        <lat>12.121212</lat>
+        <lng>2.3232323</lng>
+    </location>
+    <taxons>
+        <taxon>t</taxon>
+    </taxons>
+    <objectTypes>
+        <objectType>p</objectType>
+    </objectTypes>
+    <permission>
+        <defaultLevel>e</defaultLevel>
+    </permission>
+    <state>st</state>
+</project>

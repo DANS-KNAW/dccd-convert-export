@@ -5,8 +5,7 @@ dccd-convert-export
 SYNOPSIS
 --------
 
-    dccd-convert-export  dccd
-    dccd-convert-export
+    dccd-convert-export dccd
 
 
 DESCRIPTION
@@ -30,7 +29,7 @@ ARGUMENTS
 EXAMPLES
 --------
 
-    dccd-convert-export -o value
+    dccd-convert-export dccd
 
 
 INSTALLATION AND CONFIGURATION

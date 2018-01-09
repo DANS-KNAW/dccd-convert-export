@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<project>
+    <sid>d</sid>
+    <stateChanged>2012-04-26T07:48:50.484Z</stateChanged>
+    <title>t</title>
+    <identifier>i</identifier>
+    <category>B</category>
+    <investigator>i</investigator>
+    <laboratories>
+        <laboratory>Pre&#223;</laboratory>
+    </laboratories>
+    <types>
+        <type>d</type>
+    </types>
+    <ownerOrganizationId>P</ownerOrganizationId>
+    <language>de</language>
+    <location>
+        <lat>3.0000</lat>
+        <lng>6.1212</lng>
+    </location>
+    <timeRange>
+        <firstYear>1000</firstYear>
+        <lastYear>2000</lastYear>
+    </timeRange>
+    <taxons>
+        <taxon>s</taxon>
+    </taxons>
+    <objectTypes>
+        <objectType>typ</objectType>
+    </objectTypes>
+    <permission>
+        <defaultLevel>lev</defaultLevel>
+    </permission>
+    <state>st</state>
+</project>

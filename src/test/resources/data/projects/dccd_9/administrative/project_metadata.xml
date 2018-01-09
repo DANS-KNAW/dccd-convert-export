@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<project>
+    <sid>s</sid>
+    <stateChanged>2011-02-10T15:28:42.096Z</stateChanged>
+    <title>&apos;s-A</title>
+    <identifier>P:1000000</identifier>
+    <category>category</category>
+    <investigator>investigator</investigator>
+    <laboratories>
+        <laboratory>laboratory,,</laboratory>
+    </laboratories>
+    <types>
+        <type>type</type>
+    </types>
+    <ownerOrganizationId>Owner Org</ownerOrganizationId>
+    <language>nl</language>
+    <location>
+        <lat>11.1111</lat>
+        <lng>3.1111</lng>
+    </location>
+    <timeRange>
+        <firstYear>1000</firstYear>
+        <lastYear>2000</lastYear>
+    </timeRange>
+    <taxons>
+        <taxon>taxon</taxon>
+    </taxons>
+    <elementTypes>
+        <elementType>elemType</elementType>
+    </elementTypes>
+    <objectTypes>
+        <objectType>objType</objectType>
+    </objectTypes>
+    <permission>
+        <defaultLevel>defLevel</defaultLevel>
+    </permission>
+</project>

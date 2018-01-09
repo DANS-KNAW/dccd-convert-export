@@ -38,17 +38,12 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
   it should "create an Array[String] containing the names of data files in the projects directory" in {
     var array: Array[String] = Array()
     array = getListOfSubDirectories("./src/test/resources/data/projects")
-    //TODO The elements of the following array are sorted according to increasing nbrs considering the first two digits.
-    //TODO These are the data files in my "./src/test/resources/data/projects" directory.
-    //TODO I haven't shared these test files in my pull request
-    //TODO I can share them if we decide to use these set of data files as test resources
-    //TODO Otherwise I will change the following content.
-    array shouldBe Array("dccd_1605", "dccd_2137", "dccd_2554", "dccd_2693", "dccd_3045", "dccd_3887", "dccd_5457", "dccd_6152", "dccd_6856", "dccd_93")
+    array shouldBe Array("dccd_1", "dccd_2", "dccd_3", "dccd_4", "dccd_5", "dccd_9")
   }
 
   it should "throw NullPointerException if the projects directory is empty" in {
     def getListErrorCheck() = {
-      //TODO projects4 is a file which does not exist in "./src/test/resources/data/"
+      //projects4 is a file which does not exist in "./src/test/resources/data/"
       Try { getListOfSubDirectories("./src/test/resources/data/projects4") }
       match {
         case Failure(_) => throw new java.lang.NullPointerException("NullPointerException thrown")
@@ -62,8 +57,7 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
   "getListOfSubDirectories(\"./src/test/resources/data/projects\").apply(0)" should
     "throw ArrayIndexOutOfBoundsException if the projects directory is empty" in {
     def getListErrorCheck() = {
-      //TODO projects3 is an empty directory which I've created in "./src/test/resources/data/"
-      //TODO I haven't shared it in my pull request
+      //projects3 is an empty directory in "./src/test/resources/data/"
       Try { getListOfSubDirectories("./src/test/resources/data/projects3").apply(0) }
       match {
         case Failure(_) => throw new java.lang.ArrayIndexOutOfBoundsException("ArrayIndexOutOfBoundsException thrown")
@@ -80,7 +74,7 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
 
   "parseNoWS" should "parse an xml file" in {
     def parse() = {
-      (parseNoWS(XML.loadFile("./src/test/resources/data/projects/dccd_93/administrative/project_metadata.xml").toString()) \\ "abc").text
+      (parseNoWS(XML.loadFile("./src/test/resources/data/projects/dccd_9/administrative/project_metadata.xml").toString()) \\ "abc").text
     }
 
     def parseErrorCheck() = {

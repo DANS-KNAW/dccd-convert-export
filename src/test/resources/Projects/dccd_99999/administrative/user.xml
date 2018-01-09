@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<user>
+    <id>user001</id>
+    <displayname>I.N.I.T.I.A.L.S. Lastname</displayname>
+    <lastname>Lastname</lastname>
+    <email>user@domain.nl</email>
+    <organisation>user organisation</organisation>
+    <title>Prof.dr.</title>
+    <initials>I.N.I.T.I.A.L.S.</initials>
+    <function>user function</function>
+    <telephone>+31 66 66 66 666</telephone>
+    <accountState>ACTIVE</accountState>
+    <roles>
+        <role>USER</role>
+    </roles>
+    <lastLoginDate>2013-06-19T06:06:06.000Z</lastLoginDate>
+</user>

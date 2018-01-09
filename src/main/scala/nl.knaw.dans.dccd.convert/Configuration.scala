@@ -29,8 +29,6 @@ object Configuration {
   def apply(): Configuration = {
     val home = Paths.get(System.getProperty("app.home"))
     val cfgPath = Seq(
-      //Paths.get(s"/etc/opt/dans.knaw.nl/dccd-convert-export/"),
-      //Paths.get(s"/etc/opt/nl.knaw.dans/dccd-convert-export/"),
       Paths.get(s"/etc/opt/dans.knaw.nl/dccd-convert-export/"),
       home.resolve("cfg"))
       .find(Files.exists(_))

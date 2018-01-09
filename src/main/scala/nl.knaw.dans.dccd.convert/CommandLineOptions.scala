@@ -26,7 +26,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val synopsis: String =
     s"""
        |  $printedName  dccd
-       |  $printedName  """.stripMargin
+      """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
   banner(
@@ -44,7 +44,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val runService = new Subcommand("dccd") {
     descr(
       "Converts Dccd xml files to csv files")
-    //"Starts Dccd Convert Export as a daemon that services HTTP requests")
+
     footer(SUBCOMMAND_SEPARATOR)
   }
   addSubcommand(runService)

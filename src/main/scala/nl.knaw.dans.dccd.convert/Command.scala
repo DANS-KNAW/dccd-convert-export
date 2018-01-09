@@ -28,7 +28,7 @@ object Command extends App with DebugEnhancedLogging {
   val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration) {
     verify()
   }
-  //val app = new DccdConvertExportApp(new ApplicationWiring(configuration))
+
   val app = new DccdConvertExportApp(configuration)
 
 
@@ -46,8 +46,6 @@ object Command extends App with DebugEnhancedLogging {
         case Success(_) => Try { "unknown command" }
       }
 
-
-    //???
   }
 
   result.map(msg => Console.err.println(s"OK: $msg")).doIfFailure {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<permission>
+    <projectId>dccd:99999</projectId>
+    <ownerId>user organisation</ownerId>
+    <defaultLevel>SERIES</defaultLevel>
+</permission>

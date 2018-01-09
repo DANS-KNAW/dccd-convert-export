@@ -143,8 +143,6 @@ package object dccd {
     maxLength
   }
 
-
-
   implicit class TryExtensions2[T](val t: Try[T]) extends AnyVal {
     // TODO candidate for dans-scala-lib
     def unsafeGetOrThrow: T = {
