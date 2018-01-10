@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.dccd.convert
 
+import java.io.File
 import java.util.GregorianCalendar
 
 import nl.knaw.dans.dccd._
@@ -35,18 +36,18 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
     getListOfSubDirectories("./src/test/resources/data/projects").isEmpty shouldBe false
   }
 
-  it should "create an Array[String] containing the names of data files in the projects directory" in {
+  it should "create an Array[String] containing the names of data files in the projects file" in {
     var array: Array[String] = Array()
     array = getListOfSubDirectories("./src/test/resources/data/projects")
-    array shouldBe Array("dccd_1", "dccd_2", "dccd_3", "dccd_4", "dccd_5", "dccd_9")
+    array.sorted shouldBe Array("dccd_1", "dccd_2", "dccd_3", "dccd_4", "dccd_5", "dccd_9")
   }
 
-  it should "throw NullPointerException if the projects directory is empty" in {
+  it should "throw NullPointerException if the projects file does not exist" in {
+    var nonexistingProjectsFile = new File("./src/test/resources/data/projects4")
     def getListErrorCheck() = {
-      //projects4 is a file which does not exist in "./src/test/resources/data/"
-      Try { getListOfSubDirectories("./src/test/resources/data/projects4") }
+      Try { getListOfSubDirectories(nonexistingProjectsFile.toString) }
       match {
-        case Failure(_) => throw new java.lang.NullPointerException("NullPointerException thrown")
+        case Failure(_) => throw new java.lang.NullPointerException()
         case Success(_) => "success"
       }
     }
@@ -54,13 +55,15 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
     a[NullPointerException] should be thrownBy { getListErrorCheck() }
   }
 
+
   "getListOfSubDirectories(\"./src/test/resources/data/projects\").apply(0)" should
-    "throw ArrayIndexOutOfBoundsException if the projects directory is empty" in {
+    "throw ArrayIndexOutOfBoundsException if the projects file is empty" in {
+    var emptyProjectsFile = new File("./src/test/resources/data/projects3")
+    emptyProjectsFile.mkdir()
     def getListErrorCheck() = {
-      //projects3 is an empty directory in "./src/test/resources/data/"
-      Try { getListOfSubDirectories("./src/test/resources/data/projects3").apply(0) }
+      Try { getListOfSubDirectories(emptyProjectsFile.toString).apply(0) }
       match {
-        case Failure(_) => throw new java.lang.ArrayIndexOutOfBoundsException("ArrayIndexOutOfBoundsException thrown")
+        case Failure(_) => print(throw new java.lang.ArrayIndexOutOfBoundsException())
         case Success(_) => "success"
       }
     }
@@ -162,7 +165,7 @@ class dccdSpec extends FlatSpec with Matchers with CustomMatchers with BeforeAnd
     def getCsvFile() = {
       Try { CSVReader("./src/test/resources/data/UserIdEasyMap.csv", ",") }
       match {
-        case Failure(_) => throw new java.lang.NullPointerException("NullPointerException thrown")
+        case Failure(_) => throw new java.lang.NullPointerException()
         case Success(_) => "success"
       }
     }
