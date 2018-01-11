@@ -25,7 +25,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Convert DCCD export to multi-deposit"""
   val synopsis: String =
     s"""
-       |  $printedName  dccd
+       |  $printedName dccd
       """.stripMargin
 
   version(s"$printedName v${ configuration.version }")

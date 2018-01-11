@@ -18,10 +18,10 @@ ARGUMENTS
 ---------
 
     Options:
-    
+
           --help      Show help message
           --version   Show version of this program
-    
+
     Subcommand: dccd - Converts Dccd xml files to csv files
           --help   Show help message
     ---
