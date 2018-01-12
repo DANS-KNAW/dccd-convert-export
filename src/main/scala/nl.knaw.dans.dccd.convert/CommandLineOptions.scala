@@ -15,7 +15,9 @@
  */
 package nl.knaw.dans.dccd.convert
 
-import org.rogach.scallop.{ ScallopConf, Subcommand }
+import nl.knaw.dans.dccd.{ dataPath, _ }
+import org.rogach.scallop.{ ScallopConf, ScallopOption, Subcommand }
+
 
 class CommandLineOptions(args: Array[String], configuration: Configuration) extends ScallopConf(args) {
   appendDefaultToDescription = true
@@ -25,13 +27,31 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Convert DCCD export to multi-deposit"""
   val synopsis: String =
     s"""
-       |  $printedName dccd
+       |  $printedName dataPath [<the path of the data>]
+       |  $printedName dataPath
+       |
+       |  Details:
+       |
+       |  $printedName dataPath [<the path of the data>]
+       |   => Use this command to specify a path for the data.
+       |
+       |  $printedName dataPath
+       |   => Use this command to use the default data path.
+       |
+       |   Use run.sh instead of $printedName if you are not on the VM
+       |
+       |   The default path is :
+       |   > ./data/projects on your local machine
+       |   > /vagrant/data/projects on the VM
+       |
+       |   To use the default path in any case, data must be saved into
+       |   ./data/projects while dccd-convert-export is the current directory
       """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
   banner(
     s"""
-       |  $description
+       |$description
        |
        |Usage:
        |
@@ -41,13 +61,13 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
        |""".stripMargin)
   //val url = opt[String]("someOption", noshort = true, descr = "Description of the option", default = app.someProperty)
 
-  val runService = new Subcommand("dccd") {
-    descr(
-      "Converts Dccd xml files to csv files")
+  val data = new Subcommand("dataPath") {
+    descr("takes dccd data from the given or default path and creates instructions.csv file")
+    val dPath: ScallopOption[dataPath] = trailArg("the path of the data", required = false)
 
     footer(SUBCOMMAND_SEPARATOR)
   }
-  addSubcommand(runService)
+  addSubcommand(data)
 
 
   footer("")

@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.dccd.convert
 
+import nl.knaw.dans.dccd.dataPath
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -34,12 +35,18 @@ object Command extends App with DebugEnhancedLogging {
 
   val result: Try[FeedBackMessage] = commandLine.subcommand match {
 
-    case Some(runService @ commandLine.runService) =>
-      app.createFullReport()
-      Try { "full report" } match {
-        case Failure(_) => Try { "failure: Full report dccd-convert" }
-        case Success(_) => Try { "success: Full report dccd-convert" }
-      }
+     case Some(data @ commandLine.data) =>
+       val dataPathEnteredByUser = "None"
+       if(data.dPath.toOption.nonEmpty) {
+         val dataPathEnteredByUser = data.dPath.apply()
+       }
+       app.createFullReport(dataPathEnteredByUser)
+
+       Try { data.dPath.toOption.get.toString } match {
+        case Failure(_) => Try { "default data path: /vagrant/data/projects on VM, ./data/projects on local machine" }
+        case Success(_) => Try { "path of data: " + dataPathEnteredByUser }
+       }
+
     case _ =>
       Try { "" } match {
         case Failure(_) => Try { "failure: ?" }

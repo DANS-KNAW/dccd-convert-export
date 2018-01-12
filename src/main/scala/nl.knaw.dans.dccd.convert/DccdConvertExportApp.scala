@@ -19,7 +19,7 @@ import java.io._
 import java.nio.file.{ Path, Paths }
 import java.util.{ Calendar, GregorianCalendar, Locale }
 
-import nl.knaw.dans.dccd._
+import nl.knaw.dans.dccd.{ dataPath, _ }
 import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, ExtendedBufferedReader }
 
 import scala.collection.mutable._
@@ -28,62 +28,70 @@ import scala.util.Try
 import scala.xml.parsing.ConstructingParser.fromSource
 import scala.xml.{ Elem, NodeSeq, XML }
 
-
 class DccdConvertExportApp(configuration: Configuration) {
 
   def getPath(dir: String): Path = {
-    Paths.get(configuration.properties.getString(dir))
+        Paths.get(configuration.properties.getString(dir))
   }
 
-  def directoryPath(dir: String): Path = {
-    getPath(dir)
+
+  def directoryPath(dir: String, userDefinedDataPath:String): String = {
+    val userPath: String = userDefinedDataPath
+    val defaultPath : String = getPath(dir).toString
+    var path = ""
+    if(userPath != "None"){
+       path = userPath
+    }
+    if(userPath == "None"){
+       path = defaultPath
+    }
+    path
   }
 
-  val csvPrinterToFile = new CSVPrinter(new FileWriter(directoryPath("data").toString + "/instructions" + ".csv"), csvFormat.withDelimiter(','))
+  //TODO Currently the output is being saved into current directory. We can replace this by a specific directory if neccessary.
+  val csvPrinterToFile = new CSVPrinter(new FileWriter("./instructions.csv"), csvFormat.withDelimiter(','))
 
   //TODO I need an actual data for "UserIdEasyMap.csv" file that will contain
   //TODO DepositorIds and corresponding actual Easy UserIds
   //TODO Ex: DepositorIdInUserXmlFile, CorrespondingEasyUserId
   //TODO     AnotherDepositorIdInUserXmlFile, CorrespondingEasyUserId
   //TODO Sequence of DepositorIds in the first column do not matter
-
-  def UserIdMappingFilePath(dir: String): String = {
-    directoryPath(dir).toString + "/UserIdEasyMap.csv"
+  def UserIdMappingFilePath(dir: String, userDefinedDataPath:String ): String = {
+    directoryPath(dir, userDefinedDataPath) + "/UserIdEasyMap.csv"
   }
 
-  //TODO We should make a decision for the path of the "UserIdEasyMap.csv" file
-  val pathOfUserIdEasyMap: String = UserIdMappingFilePath("data")
 
-  def directoryList(dir: String): List[String] = {
-    getListOfSubDirectories(getPath(dir).toString).toList
+  def directoryList(dir: String, userDefinedDataPath:String): List[String] = {
+    getListOfSubDirectories(directoryPath(dir, userDefinedDataPath)).toList
   }
 
-  def getMetadataAsXmlTreeElem(projectName: String, dir: String): Elem = {
-    XML.loadFile(directoryOfData(projectName, directoryPath(dir), "/administrative/project_metadata.xml").toString)
+  def getMetadataAsXmlTreeElem(projectName: String, dir: String, userDefinedDataPath:String): Elem = {
+    XML.loadFile(directoryOfData(projectName, directoryPath(dir, userDefinedDataPath), "/administrative/project_metadata.xml").toString)
   }
 
-  def getUserAsXmlTreeElem(projectName: String, dir: String): Elem = {
-    XML.loadFile(directoryOfData(projectName, directoryPath(dir), "/administrative/user.xml").toString)
+  def getUserAsXmlTreeElem(projectName: String, dir: String, userDefinedDataPath:String): Elem = {
+    XML.loadFile(directoryOfData(projectName, directoryPath(dir, userDefinedDataPath), "/administrative/user.xml").toString)
   }
 
-  def getParsedMetadata(projectName: String, dir: String): NodeSeq = {
-    parseNoWS(getMetadataAsXmlTreeElem(projectName, dir).toString())
+  def getParsedMetadata(projectName: String, dir: String, userDefinedDataPath:String): NodeSeq = {
+    parseNoWS(getMetadataAsXmlTreeElem(projectName, dir, userDefinedDataPath).toString())
   }
 
-  def getParsedUser(projectName: String, dir: String): NodeSeq = {
-    parseNoWS(getUserAsXmlTreeElem(projectName, dir).toString())
+  def getParsedUser(projectName: String, dir: String, userDefinedDataPath:String): NodeSeq = {
+    parseNoWS(getUserAsXmlTreeElem(projectName, dir, userDefinedDataPath).toString())
   }
 
-  def extractDcTitle(projectName: String, dir: String): String = {
-    (getParsedMetadata(projectName, dir) \\ "title").text.trim
+  def extractDcTitle(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "title").text.trim
   }
 
   //TODO else case should be removed after getting the actual data for UserIdEasyMap
-  def extractDepositorId(projectName: String, dir: String): String = {
-    val depId: String = (getParsedUser(projectName, dir) \\ "id").text.trim
+  def extractDepositorId(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    val depId: String = (getParsedUser(projectName, dir, userDefinedDataPath:String) \\ "id").text.trim
     var userId: String = depId
-    if (mapDepositorIdActualEasyUserId(pathOfUserIdEasyMap).keySet.contains(depId)) {
-      for ((k, v) <- mapDepositorIdActualEasyUserId(pathOfUserIdEasyMap))
+    val cmdDataPath: String = userDefinedDataPath
+    if (mapDepositorIdActualEasyUserId(UserIdMappingFilePath(dir, cmdDataPath )).keySet.contains(depId)) {
+      for ((k, v) <- mapDepositorIdActualEasyUserId(UserIdMappingFilePath(dir, cmdDataPath )))
         if (k == depId)
           userId = v
     }
@@ -94,18 +102,18 @@ class DccdConvertExportApp(configuration: Configuration) {
     projectName
   }
 
-  def extractDcxCreatorOrganization(projectName: String, dir: String): String = {
-    (getParsedMetadata(projectName, dir) \\ "ownerOrganizationId").text.trim
+  def extractDcxCreatorOrganization(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "ownerOrganizationId").text.trim
   }
 
-  def extractDdmCreated(projectName: String, dir: String): String = {
-    var date: String = (getParsedMetadata(projectName, dir) \\ "stateChanged").text.trim
+  def extractDdmCreated(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    var date: String = (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "stateChanged").text.trim
     var parsedDate: AnyRef = Format.parseObject(date)
     Format.format(parsedDate)
   }
 
-  def extractDctRightsHolder(projectName: String, dir: String): String = {
-    extractDcxCreatorOrganization(projectName, dir)
+  def extractDctRightsHolder(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    extractDcxCreatorOrganization(projectName, dir, userDefinedDataPath)
   }
 
   def setDcDescription(): String = {
@@ -116,9 +124,9 @@ class DccdConvertExportApp(configuration: Configuration) {
     "Dendrochronology".trim
   }
 
-  def extractListOfDcElementTypes(projectName: String, dir: String): List[String] = {
+  def extractListOfDcElementTypes(projectName: String, dir: String, userDefinedDataPath:String): List[String] = {
     var ListOfElementTypes: List[String] = List()
-    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir, userDefinedDataPath)
     for (e <- metadataXmlElem.child) {
       if (e.label == "elementTypes") {
         for (ee <- e.child) {
@@ -131,9 +139,9 @@ class DccdConvertExportApp(configuration: Configuration) {
     ListOfElementTypes
   }
 
-  def extractListOfDcObjectTypes(projectName: String, dir: String): List[String] = {
+  def extractListOfDcObjectTypes(projectName: String, dir: String, userDefinedDataPath:String): List[String] = {
     var ListOfObjectTypes: List[String] = List()
-    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir, userDefinedDataPath:String)
     for (e <- metadataXmlElem.child) {
       if (e.label == "objectTypes") {
         for (ee <- e.child) {
@@ -147,9 +155,9 @@ class DccdConvertExportApp(configuration: Configuration) {
   }
 
 
-  def extractListOfDcTypesMetadata(projectName: String, dir: String): List[String] = {
+  def extractListOfDcTypesMetadata(projectName: String, dir: String, userDefinedDataPath:String): List[String] = {
     var ListOfDcTypes: List[String] = List()
-    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir, userDefinedDataPath:String)
     for (e <- metadataXmlElem.child) {
       if (e.label == "types") {
         for (ee <- e.child) {
@@ -162,16 +170,16 @@ class DccdConvertExportApp(configuration: Configuration) {
     ListOfDcTypes
   }
 
-  def extractDcCategory(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "category").text.nonEmpty) {
-      "dccd_category: " + (getParsedMetadata(projectName, dir) \\ "category").text.trim
+  def extractDcCategory(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "category").text.nonEmpty) {
+      "dccd_category: " + (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "category").text.trim
     }
     else ""
   }
 
-  def extractListOfDcTaxons(projectName: String, dir: String): List[String] = {
+  def extractListOfDcTaxons(projectName: String, dir: String, userDefinedDataPath:String): List[String] = {
     var ListOfDcTaxons: List[String] = List()
-    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir)
+    val metadataXmlElem: Elem = getMetadataAsXmlTreeElem(projectName, dir, userDefinedDataPath)
     for (e <- metadataXmlElem.child) {
       if (e.label == "taxons") {
         for (ee <- e.child) {
@@ -185,9 +193,9 @@ class DccdConvertExportApp(configuration: Configuration) {
   }
 
   //TODO rearrange the locations of ".isEmpty" conditions
-  def extractTimeRange(projectName: String, dir: String): String = {
-    val first = (getParsedMetadata(projectName, dir) \\ "firstYear").text.trim
-    val last = (getParsedMetadata(projectName, dir) \\ "lastYear").text.trim
+  def extractTimeRange(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    val first = (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "firstYear").text.trim
+    val last = (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "lastYear").text.trim
     if (first.contains("-").equals(false) && last.contains("-").equals(false)) {
       if (first.nonEmpty && last.nonEmpty)
         range = first + "-" + last + valA
@@ -230,30 +238,30 @@ class DccdConvertExportApp(configuration: Configuration) {
     "degrees".trim
   }
 
-  def extractDcxSpatialX(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "lat").text.nonEmpty) {
-      (getParsedMetadata(projectName, dir) \\ "lat").text.trim
+  def extractDcxSpatialX(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "lat").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "lat").text.trim
     }
     else ""
   }
 
-  def extractDcxSpatialY(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "lng").text.nonEmpty) {
-      (getParsedMetadata(projectName, dir) \\ "lng").text.trim
+  def extractDcxSpatialY(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "lng").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "lng").text.trim
     }
     else ""
   }
 
-  def extractDcIdentifierSid(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "sid").text.nonEmpty) {
-      (getParsedMetadata(projectName, dir) \\ "sid").text.trim
+  def extractDcIdentifierSid(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "sid").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "sid").text.trim
     }
     else ""
   }
 
-  def extractDcIdentifierIdentifier(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "identifier").text.nonEmpty) {
-      (getParsedMetadata(projectName, dir) \\ "identifier").text.trim
+  def extractDcIdentifierIdentifier(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "identifier").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "identifier").text.trim
     }
     else ""
   }
@@ -266,9 +274,9 @@ class DccdConvertExportApp(configuration: Configuration) {
     "Digital Collaboratory for Cultural Dendrochronology (DCCD)".trim
   }
 
-  def extractDcxRelationLink(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "sid").text.nonEmpty) {
-      "https://dendro.dans.knaw.nl/dccd/project/" + (getParsedMetadata(projectName, dir) \\ "sid").text.trim
+  def extractDcxRelationLink(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "sid").text.nonEmpty) {
+      "https://dendro.dans.knaw.nl/dccd/project/" + (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "sid").text.trim
     }
     else ""
   }
@@ -277,9 +285,9 @@ class DccdConvertExportApp(configuration: Configuration) {
     " 'IsFormatOf' ".trim
   }
 
-  def extractDcxRelationTitle_2(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "sid").text.nonEmpty) {
-      (getParsedMetadata(projectName, dir) \\ "sid").text.trim
+  def extractDcxRelationTitle_2(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "sid").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "sid").text.trim
     }
     else ""
   }
@@ -288,9 +296,9 @@ class DccdConvertExportApp(configuration: Configuration) {
     "Dataset".trim
   }
 
-  def extractLanguage(projectName: String, dir: String): String = {
-    if ((getParsedMetadata(projectName, dir) \\ "language").text.nonEmpty) {
-      (getParsedMetadata(projectName, dir) \\ "language").text.trim
+  def extractLanguage(projectName: String, dir: String, userDefinedDataPath:String): String = {
+    if ((getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "language").text.nonEmpty) {
+      (getParsedMetadata(projectName, dir, userDefinedDataPath) \\ "language").text.trim
     }
     else ""
   }
@@ -315,40 +323,40 @@ class DccdConvertExportApp(configuration: Configuration) {
     "D37000".trim
   }
 
-  def createInfoPerProject(projectName: String, dir: String): Unit = {
+  def createInfoPerProject(projectName: String, dir: String, userDefinedDataPath:String): Unit = {
 
-    var dirList: List[String] = directoryList(dir)
+    var dirList: List[String] = directoryList(dir, userDefinedDataPath)
 
-    val parsedMetadata: NodeSeq = getParsedMetadata(projectName, dir)
-    val parsedUser: NodeSeq = getParsedMetadata(projectName, dir)
+    val parsedMetadata: NodeSeq = getParsedMetadata(projectName, dir, userDefinedDataPath)
+    val parsedUser: NodeSeq = getParsedMetadata(projectName, dir, userDefinedDataPath)
 
     val dataset: String = extractDataset(projectName)
-    val dcTitle: String = extractDcTitle(projectName, dir)
-    val depositorId: String = extractDepositorId(projectName, dir)
-    val dcxCreatorOrganization: String = extractDcxCreatorOrganization(projectName, dir)
-    val ddmCreated: String = extractDdmCreated(projectName, dir)
-    val dctRightsHolder: String = extractDctRightsHolder(projectName, dir)
+    val dcTitle: String = extractDcTitle(projectName, dir, userDefinedDataPath)
+    val depositorId: String = extractDepositorId(projectName, dir, userDefinedDataPath)
+    val dcxCreatorOrganization: String = extractDcxCreatorOrganization(projectName, dir, userDefinedDataPath)
+    val ddmCreated: String = extractDdmCreated(projectName, dir, userDefinedDataPath)
+    val dctRightsHolder: String = extractDctRightsHolder(projectName, dir, userDefinedDataPath)
     val dcDescription: String = setDcDescription()
     val dcSubject: String = setDcSubject()
 
-    val dcElementTypes: List[String] = extractListOfDcElementTypes(projectName, dir)
-    val dcObjectTypes: List[String] = extractListOfDcObjectTypes(projectName, dir)
-    val dcTypeMetadata: List[String] = extractListOfDcTypesMetadata(projectName, dir)
-    val dcCategory: String = extractDcCategory(projectName, dir)
-    val dcTaxons: List[String] = extractListOfDcTaxons(projectName, dir)
-    val dctTemporal: String = extractTimeRange(projectName, dir)
+    val dcElementTypes: List[String] = extractListOfDcElementTypes(projectName, dir, userDefinedDataPath)
+    val dcObjectTypes: List[String] = extractListOfDcObjectTypes(projectName, dir, userDefinedDataPath)
+    val dcTypeMetadata: List[String] = extractListOfDcTypesMetadata(projectName, dir, userDefinedDataPath)
+    val dcCategory: String = extractDcCategory(projectName, dir, userDefinedDataPath)
+    val dcTaxons: List[String] = extractListOfDcTaxons(projectName, dir, userDefinedDataPath)
+    val dctTemporal: String = extractTimeRange(projectName, dir, userDefinedDataPath)
     val dcxSpatialScheme: String = setDcxSpatialScheme()
-    val dcxSpatialX: String = extractDcxSpatialX(projectName, dir)
-    val dcxSpatialY: String = extractDcxSpatialY(projectName, dir)
-    val dcIdentifierSid: String = extractDcIdentifierSid(projectName, dir)
-    val dcIdentifierIdentifier: String = extractDcIdentifierIdentifier(projectName, dir)
+    val dcxSpatialX: String = extractDcxSpatialX(projectName, dir, userDefinedDataPath)
+    val dcxSpatialY: String = extractDcxSpatialY(projectName, dir, userDefinedDataPath)
+    val dcIdentifierSid: String = extractDcIdentifierSid(projectName, dir, userDefinedDataPath)
+    val dcIdentifierIdentifier: String = extractDcIdentifierIdentifier(projectName, dir, userDefinedDataPath)
     val dcxRelationQualifier: String = setDcxRelationQualifier()
     val dcxRelationTitle: String = setDcxRelationTitle()
-    val dcxRelationLink: String = extractDcxRelationLink(projectName, dir)
+    val dcxRelationLink: String = extractDcxRelationLink(projectName, dir, userDefinedDataPath)
     val dcxRelationQualifier_2: String = setDcxRelationQualifier_2()
-    val dcxRelationTitle_2: String = extractDcxRelationTitle_2(projectName, dir)
+    val dcxRelationTitle_2: String = extractDcxRelationTitle_2(projectName, dir, userDefinedDataPath)
     val dcType: String = setDcType()
-    val language: String = extractLanguage(projectName, dir)
+    val language: String = extractLanguage(projectName, dir, userDefinedDataPath)
     val isoDefault: Locale = getDefaultIsoForLanguage(language)
     val languageISO3: String = convertDefaultToISO3Language(isoDefault)
     val ddmAccessRights: String = setDdmAccessRights()
@@ -543,19 +551,19 @@ class DccdConvertExportApp(configuration: Configuration) {
 
   }
 
-  def createCsvReportFromDccdExport(dir: String): String = {
-    var dirPath: Path = getPath(dir)
-    var dirList: List[String] = getListOfSubDirectories(getPath(dir).toString).toList
+
+  def createCsvReportFromDccdExport(dir: String, userDefinedDataPath:String): String = {
+    var dirList: List[String] = getListOfSubDirectories(directoryPath(dir, userDefinedDataPath)).toList
     dirList.foreach { i =>
-      createInfoPerProject(i, dir)
+      createInfoPerProject(i, dir, userDefinedDataPath)
     }
     printer.close()
     out.toString
 
   }
 
-  def createFullReport(depositor: Option[String] = None): Try[String] = {
-    createCsvReportFromDccdExport("projects")
+  def createFullReport(userDefinedDataPath:String): Try[String] = {
+    createCsvReportFromDccdExport("projects", userDefinedDataPath)
     System.out.print(out.toString)
     Try {
       "full report"

@@ -16,7 +16,6 @@
 package nl.knaw.dans
 
 import java.io.File
-import java.nio.file.Path
 import java.text.SimpleDateFormat
 
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
@@ -30,6 +29,8 @@ import scala.xml.parsing.ConstructingParser.fromSource
 import scala.xml.{ NodeSeq, TopScope }
 
 package object dccd {
+
+  type dataPath = String
 
   def getListOfSubDirectories(directoryName: String): Array[String] = {
     new File(directoryName)
@@ -119,8 +120,8 @@ package object dccd {
     map
   }
 
-  def directoryOfData(projectName: String, path: Path, relativePathOfData: String): String = {
-    path.toString + "/" + projectName + relativePathOfData
+  def directoryOfData(projectName: String, path: String, relativePathOfData: String): String = {
+    path + "/" + projectName + relativePathOfData
   }
 
   def createListDcSubject(listDcS: List[String], candidateSeq: mutable.Seq[String]): List[String] = {

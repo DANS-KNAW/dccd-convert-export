@@ -5,7 +5,29 @@ dccd-convert-export
 SYNOPSIS
 --------
 
-    dccd-convert-export dccd
+    Usage:
+
+
+      dccd-convert-export dataPath [<the path of the data>]
+      dccd-convert-export dataPath
+
+      Details:
+
+      dccd-convert-export dataPath [<the path of the data>]
+       => Use this command to specify a path for the data.
+
+      dccd-convert-export dataPath
+       => Use this command to use the default data path.
+
+       Use run.sh instead of dccd-convert-export if you are not on the VM
+
+       The default path is :
+       > ./data/projects on your local machine
+       > /vagrant/data/projects on the VM
+
+       To use the default path in any case, data must be saved into
+       ./data/projects while dccd-convert-export is the current directory
+
 
 
 DESCRIPTION
@@ -22,13 +44,17 @@ ARGUMENTS
           --help      Show help message
           --version   Show version of this program
 
-    Subcommand: dccd - Converts Dccd xml files to csv files
+    Subcommand: dataPath - takes dccd data from the given or default path and creates instructions.csv file
           --help   Show help message
-    ---
+
+     trailing arguments:
+      the path of the data (not required)
+---
         
 EXAMPLES
 --------
 
+    dccd-convert-export dccd [<The path of the data>]
     dccd-convert-export dccd
 
 
