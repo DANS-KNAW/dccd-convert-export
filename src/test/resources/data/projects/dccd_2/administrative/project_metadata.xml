@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<project>
+    <sid>d</sid>
+    <stateChanged>2000-01-19T09:40:20.307Z</stateChanged>
+    <title>&apos;s H, d</title>
+    <identifier>P:00000</identifier>
+    <category>s</category>
+    <investigator>E. J</investigator>
+    <laboratories>
+        <laboratory>G,,</laboratory>
+    </laboratories>
+    <types>
+        <type>d</type>
+    </types>
+    <ownerOrganizationId>S</ownerOrganizationId>
+    <language>nl</language>
+    <location>
+        <lat>1.87438</lat>
+        <lng>1.24101</lng>
+    </location>
+    <timeRange>
+        <firstYear>1000</firstYear>
+        <lastYear>2000</lastYear>
+    </timeRange>
+    <taxons>
+        <taxon>Q</taxon>
+    </taxons>
+    <elementTypes>
+        <elementType>O</elementType>
+        <elementType>l</elementType>
+    </elementTypes>
+    <objectTypes>
+        <objectType>j</objectType>
+    </objectTypes>
+    <permission>
+        <defaultLevel>s</defaultLevel>
+    </permission>
+    <state>D</state>
+</project>

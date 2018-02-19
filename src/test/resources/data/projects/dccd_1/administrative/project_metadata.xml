@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<project>
+    <sid>d</sid>
+    <stateChanged>2000-05-31T18:49:06.698Z</stateChanged>
+    <title>S</title>
+    <identifier>0</identifier>
+    <category>s</category>
+    <investigator>a</investigator>
+    <laboratories>
+        <laboratory>S,,</laboratory>
+    </laboratories>
+    <types>
+        <type>d</type>
+    </types>
+    <ownerOrganizationId>G</ownerOrganizationId>
+    <language>nl</language>
+    <permission>
+        <defaultLevel>t</defaultLevel>
+    </permission>
+    <state>D</state>
+</project>

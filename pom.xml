@@ -17,7 +17,7 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-prototype</artifactId>
@@ -66,6 +66,19 @@
         <dependency>
             <groupId>com.jsuereth</groupId>
             <artifactId>scala-arm_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-xml_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>2.3</version>
         </dependency>
     </dependencies>
     <repositories>
@@ -137,6 +150,11 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration combine.children="override">
+                            <group>Application/Archiving</group>
+                            <defaultUsername>root</defaultUsername>
+                            <defaultGroupname>root</defaultGroupname>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

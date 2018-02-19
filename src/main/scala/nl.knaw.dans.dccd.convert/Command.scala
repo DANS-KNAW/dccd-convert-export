@@ -15,11 +15,12 @@
  */
 package nl.knaw.dans.dccd.convert
 
+import nl.knaw.dans.dccd.dataPath
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.reflectiveCalls
-import scala.util.{ Failure, Try }
+import scala.util.{ Failure, Success, Try }
 
 object Command extends App with DebugEnhancedLogging {
   type FeedBackMessage = String
@@ -28,13 +29,30 @@ object Command extends App with DebugEnhancedLogging {
   val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration) {
     verify()
   }
-  val app = new DccdConvertExportApp(new ApplicationWiring(configuration))
+
+  val app = new DccdConvertExportApp(configuration)
 
 
   val result: Try[FeedBackMessage] = commandLine.subcommand match {
-    case _ =>
 
-      ???
+     case Some(data @ commandLine.data) =>
+       val dataPathEnteredByUser = "None"
+       if(data.dPath.toOption.nonEmpty) {
+         val dataPathEnteredByUser = data.dPath.apply()
+       }
+       app.createFullReport(dataPathEnteredByUser)
+
+       Try { data.dPath.toOption.get.toString } match {
+        case Failure(_) => Try { "default data path: /vagrant/data/projects on VM, ./data/projects on local machine" }
+        case Success(_) => Try { "path of data: " + dataPathEnteredByUser }
+       }
+
+    case _ =>
+      Try { "" } match {
+        case Failure(_) => Try { "failure: ?" }
+        case Success(_) => Try { "unknown command" }
+      }
+
   }
 
   result.map(msg => Console.err.println(s"OK: $msg")).doIfFailure {
