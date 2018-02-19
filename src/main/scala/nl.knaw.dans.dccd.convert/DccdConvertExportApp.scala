@@ -28,7 +28,7 @@ import scala.util.Try
 import scala.xml.parsing.ConstructingParser.fromSource
 import scala.xml.{ Elem, NodeSeq, XML }
 
-class DccdConvertExportApp(configuration: Configuration) {
+class DccdConvertExportApp(configuration: Configuration)  {
 
   def getPath(dir: String): Path = {
         Paths.get(configuration.properties.getString(dir))
@@ -267,7 +267,7 @@ class DccdConvertExportApp(configuration: Configuration) {
   }
 
   def setDcxRelationQualifier(): String = {
-    " 'references' ".trim
+    " references ".trim
   }
 
   def setDcxRelationTitle(): String = {
@@ -282,7 +282,7 @@ class DccdConvertExportApp(configuration: Configuration) {
   }
 
   def setDcxRelationQualifier_2(): String = {
-    " 'IsFormatOf' ".trim
+    " IsFormatOf ".trim
   }
 
   def extractDcxRelationTitle_2(projectName: String, dir: String, userDefinedDataPath:String): String = {
