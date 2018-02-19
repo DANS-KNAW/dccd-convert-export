@@ -282,7 +282,7 @@ class DccdConvertExportApp(configuration: Configuration)  {
   }
 
   def setDcxRelationQualifier_2(): String = {
-    " IsFormatOf ".trim
+    " isFormatOf ".trim
   }
 
   def extractDcxRelationTitle_2(projectName: String, dir: String, userDefinedDataPath:String): String = {
